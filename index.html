@@ -1,0 +1,4426 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Ecoya Studio — Studio de Montage Vidéo & Audio</title>
+  <style>
+    /* ==========================================================================
+       1. VARIABLES & DESIGN SYSTEM (SOMBRE PAR DÉFAUT + CLAIR AUTO/MANUEL)
+       ========================================================================== */
+    :root,
+    :root[data-theme="dark"] {
+      --bg-app: #0d0f12;
+      --bg-panel: #15181e;
+      --bg-panel-alt: #1b1f27;
+      --bg-elevated: #232833;
+      --bg-hover: #2c3240;
+      --border: #2a303c;
+      --border-strong: #3a4252;
+
+      --accent: #00d2ff;
+      --accent-hover: #38dcff;
+      --accent-dim: rgba(0, 210, 255, 0.16);
+      --brand-start: #10b981;
+      --brand-end: #00d2ff;
+      --accent-purple: #8b5cf6;
+      --accent-green: #10b981;
+      --accent-amber: #f59e0b;
+      --accent-red: #ef4444;
+
+      --text-primary: #f1f5f9;
+      --text-secondary: #94a3b8;
+      --text-muted: #64748b;
+
+      --monitor-stage-bg: #090a0d;
+      --canvas-bg: #000000;
+      --canvas-border: #262b36;
+      --timeline-track-bg: #101318;
+      --thumb-bg: #090b0e;
+      --scrollbar-thumb: #3a4252;
+      --scrollbar-thumb-hover: #4e586e;
+      --ruler-tick-major: #475569;
+      --ruler-tick-minor: #2a303c;
+      --ruler-text: #94a3b8;
+      --waveform-color: rgba(255, 255, 255, 0.78);
+      --clip-header-bg: rgba(0, 0, 0, 0.30);
+
+      --clip-video: #2563eb;
+      --clip-video-border: #60a5fa;
+      --clip-image: #7c3aed;
+      --clip-image-border: #c084fc;
+      --clip-audio: #059669;
+      --clip-audio-border: #34d399;
+
+      --radius-sm: 6px;
+      --radius-md: 8px;
+      --radius-lg: 12px;
+      --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Inter, Helvetica, Arial, sans-serif;
+      --font-mono: "JetBrains Mono", "Fira Code", Consolas, monospace;
+    }
+
+    :root[data-theme="light"] {
+      --bg-app: #eef2f6;
+      --bg-panel: #ffffff;
+      --bg-panel-alt: #f8fafc;
+      --bg-elevated: #f1f5f9;
+      --bg-hover: #e2e8f0;
+      --border: #d8e1ec;
+      --border-strong: #bcc8d6;
+
+      --accent: #0284c7;
+      --accent-hover: #0369a1;
+      --accent-dim: rgba(2, 132, 199, 0.12);
+      --brand-start: #059669;
+      --brand-end: #0284c7;
+      --accent-purple: #7c3aed;
+      --accent-green: #059669;
+      --accent-amber: #d97706;
+      --accent-red: #dc2626;
+
+      --text-primary: #0f172a;
+      --text-secondary: #475569;
+      --text-muted: #64748b;
+
+      --monitor-stage-bg: #dde4ee;
+      --canvas-bg: #0f172a;
+      --canvas-border: #94a3b8;
+      --timeline-track-bg: #f4f7fa;
+      --thumb-bg: #e2e8f0;
+      --scrollbar-thumb: #b6c4d4;
+      --scrollbar-thumb-hover: #94a3b8;
+      --ruler-tick-major: #94a3b8;
+      --ruler-tick-minor: #cbd5e1;
+      --ruler-text: #475569;
+      --waveform-color: rgba(255, 255, 255, 0.9);
+      --clip-header-bg: rgba(15, 23, 42, 0.34);
+
+      --clip-video: #2563eb;
+      --clip-video-border: #1d4ed8;
+      --clip-image: #7c3aed;
+      --clip-image-border: #6d28d9;
+      --clip-audio: #059669;
+      --clip-audio-border: #047857;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+    }
+
+    html, body {
+      width: 100%;
+      height: 100%;
+      background-color: var(--bg-app);
+      color: var(--text-primary);
+      font-family: var(--font-sans);
+      font-size: 13px;
+      overflow: hidden;
+      transition: background-color 0.2s ease, color 0.2s ease;
+    }
+
+    /* Scrollbars fines */
+    ::-webkit-scrollbar {
+      width: 7px;
+      height: 7px;
+    }
+    ::-webkit-scrollbar-track {
+      background: var(--bg-panel-alt);
+    }
+    ::-webkit-scrollbar-thumb {
+      background: var(--scrollbar-thumb);
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: var(--scrollbar-thumb-hover);
+    }
+
+    /* ==========================================================================
+       2. LAYOUT PRINCIPAL
+       ========================================================================== */
+    .app-shell {
+      display: flex;
+      flex-direction: column;
+      width: 100vw;
+      height: 100vh;
+    }
+
+    /* Barre supérieure */
+    .topbar {
+      height: 52px;
+      background: var(--bg-panel);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 14px;
+      gap: 10px;
+      flex-shrink: 0;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 0;
+    }
+
+    .brand-lockup {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      flex-shrink: 0;
+    }
+
+    .brand-svg-badge {
+      width: 32px;
+      height: 32px;
+      flex-shrink: 0;
+      display: block;
+      filter: drop-shadow(0 2px 6px rgba(16, 185, 129, 0.22));
+    }
+
+    .brand-wordmark {
+      font-size: 15px;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      background: linear-gradient(90deg, var(--brand-start), var(--brand-end));
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+      white-space: nowrap;
+    }
+
+    .brand-divider {
+      width: 1px;
+      height: 18px;
+      background: var(--border-strong);
+      flex-shrink: 0;
+    }
+
+    .project-title-input {
+      background: transparent;
+      border: 1px solid transparent;
+      color: var(--text-primary);
+      font-weight: 600;
+      font-size: 13px;
+      padding: 4px 8px;
+      border-radius: var(--radius-sm);
+      width: 185px;
+      transition: all 0.15s;
+    }
+    .project-title-input:hover,
+    .project-title-input:focus {
+      background: var(--bg-elevated);
+      border-color: var(--border-strong);
+      outline: none;
+    }
+
+    .topbar-actions {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      flex-wrap: nowrap;
+    }
+
+    .top-select {
+      height: 30px;
+      padding: 0 8px;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border-strong);
+      background: var(--bg-elevated);
+      color: var(--text-primary);
+      font-size: 12px;
+      font-weight: 500;
+      cursor: pointer;
+      outline: none;
+    }
+    .top-select:hover {
+      background: var(--bg-hover);
+    }
+
+    /* Boutons génériques */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      height: 30px;
+      padding: 0 11px;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border-strong);
+      background: var(--bg-elevated);
+      color: var(--text-primary);
+      font-size: 12px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      white-space: nowrap;
+    }
+    .btn:hover:not(:disabled) {
+      background: var(--bg-hover);
+      border-color: var(--text-muted);
+    }
+    .btn:active:not(:disabled) {
+      transform: translateY(1px);
+    }
+    .btn:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, var(--brand-start), var(--accent));
+      border-color: transparent;
+      color: #ffffff;
+      font-weight: 600;
+    }
+    .btn-primary:hover:not(:disabled) {
+      filter: brightness(1.08);
+    }
+
+    .btn-wav {
+      background: rgba(16, 185, 129, 0.15);
+      border-color: rgba(16, 185, 129, 0.48);
+      color: var(--accent-green);
+      font-weight: 600;
+    }
+    :root[data-theme="dark"] .btn-wav {
+      color: #6ee7b7;
+    }
+    .btn-wav:hover:not(:disabled) {
+      background: rgba(16, 185, 129, 0.25);
+    }
+
+    .btn-danger {
+      background: rgba(239, 68, 68, 0.14);
+      border-color: rgba(239, 68, 68, 0.45);
+      color: var(--accent-red);
+    }
+    :root[data-theme="dark"] .btn-danger {
+      color: #fca5a5;
+    }
+    .btn-danger:hover:not(:disabled) {
+      background: rgba(239, 68, 68, 0.24);
+    }
+
+    .btn-icon {
+      width: 30px;
+      height: 30px;
+      padding: 0;
+    }
+
+    .btn.active-tool {
+      background: var(--accent-dim);
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+
+    /* Zone supérieure (Médias | Prévisualisation | Inspecteur) */
+    .workspace-upper {
+      display: grid;
+      grid-template-columns: 275px 1fr 330px;
+      flex: 1;
+      min-height: 0;
+      border-bottom: 1px solid var(--border);
+    }
+
+    /* ==========================================================================
+       3. PANNEAU GAUCHE : BIBLIOTHÈQUE DE MÉDIAS
+       ========================================================================== */
+    .panel {
+      background: var(--bg-panel);
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+    }
+
+    .panel-left {
+      border-right: 1px solid var(--border);
+    }
+
+    .panel-right {
+      border-left: 1px solid var(--border);
+    }
+
+    html[dir="rtl"] .panel-left {
+      border-right: none;
+      border-left: 1px solid var(--border);
+    }
+    html[dir="rtl"] .panel-right {
+      border-left: none;
+      border-right: 1px solid var(--border);
+    }
+
+    .panel-header {
+      height: 38px;
+      padding: 0 12px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-weight: 600;
+      font-size: 11.5px;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: var(--text-secondary);
+      flex-shrink: 0;
+    }
+
+    .media-toolbar {
+      padding: 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .media-toolbar-row {
+      display: flex;
+      gap: 6px;
+    }
+    .media-toolbar-row .btn {
+      flex: 1;
+      font-size: 11.5px;
+      padding: 0 8px;
+    }
+
+    .media-list {
+      flex: 1;
+      overflow-y: auto;
+      padding: 10px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      align-content: start;
+    }
+
+    .media-dropzone-hint {
+      grid-column: 1 / -1;
+      border: 1.5px dashed var(--border-strong);
+      border-radius: var(--radius-md);
+      padding: 16px 10px;
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 12px;
+      line-height: 1.45;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .media-dropzone-hint:hover,
+    .media-dropzone-hint.dragover {
+      border-color: var(--accent);
+      color: var(--text-primary);
+      background: var(--accent-dim);
+    }
+
+    .media-card {
+      background: var(--bg-panel-alt);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      overflow: hidden;
+      cursor: grab;
+      transition: all 0.15s;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+    }
+    .media-card:hover {
+      border-color: var(--accent);
+      transform: translateY(-1px);
+    }
+
+    .media-thumb {
+      width: 100%;
+      height: 68px;
+      background: var(--thumb-bg);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      overflow: hidden;
+    }
+    .media-thumb img,
+    .media-thumb canvas {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .media-badge {
+      position: absolute;
+      top: 4px;
+      left: 4px;
+      font-size: 10px;
+      font-weight: 700;
+      padding: 1px 5px;
+      border-radius: 4px;
+      text-transform: uppercase;
+      background: rgba(0, 0, 0, 0.74);
+      color: #ffffff;
+    }
+    .badge-video { border-left: 3px solid #60a5fa; }
+    .badge-image { border-left: 3px solid #c084fc; }
+    .badge-audio { border-left: 3px solid #34d399; }
+
+    .media-duration {
+      position: absolute;
+      bottom: 4px;
+      right: 4px;
+      font-family: var(--font-mono);
+      font-size: 10px;
+      padding: 1px 4px;
+      border-radius: 3px;
+      background: rgba(0, 0, 0, 0.78);
+      color: #e2e8f0;
+    }
+
+    .media-info {
+      padding: 6px 7px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 4px;
+    }
+
+    .media-name {
+      font-size: 11.5px;
+      color: var(--text-primary);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .media-add-btn {
+      width: 22px;
+      height: 22px;
+      border-radius: 4px;
+      border: 1px solid var(--border-strong);
+      background: var(--bg-elevated);
+      color: var(--accent);
+      font-weight: bold;
+      cursor: pointer;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .media-add-btn:hover {
+      background: var(--accent);
+      color: #ffffff;
+    }
+
+    /* ==========================================================================
+       4. PANNEAU CENTRAL : MONITEUR DE PRÉVISUALISATION
+       ========================================================================== */
+    .monitor-area {
+      background: var(--monitor-stage-bg);
+      display: flex;
+      flex-direction: column;
+      min-width: 0;
+      min-height: 0;
+    }
+
+    .monitor-topbar {
+      height: 38px;
+      background: var(--bg-panel);
+      border-bottom: 1px solid var(--border);
+      padding: 0 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+
+    .aspect-switcher {
+      display: flex;
+      background: var(--bg-panel-alt);
+      padding: 2px;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border);
+    }
+    .aspect-btn {
+      background: transparent;
+      border: none;
+      color: var(--text-secondary);
+      font-size: 11.5px;
+      font-weight: 600;
+      padding: 3px 8px;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    .aspect-btn.active {
+      background: var(--bg-elevated);
+      color: var(--accent);
+    }
+
+    .scene-status-pill {
+      font-size: 11px;
+      padding: 3px 8px;
+      border-radius: 999px;
+      background: var(--bg-elevated);
+      color: var(--text-secondary);
+      border: 1px solid var(--border);
+      white-space: nowrap;
+    }
+    .scene-status-pill.grade-active {
+      border-color: var(--accent-purple);
+      color: var(--accent-purple);
+      background: rgba(139, 92, 246, 0.14);
+    }
+    :root[data-theme="dark"] .scene-status-pill.grade-active {
+      color: #d8b4fe;
+    }
+
+    .canvas-stage {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 14px;
+      min-height: 0;
+      position: relative;
+      overflow: hidden;
+    }
+
+    #previewCanvas {
+      background: var(--canvas-bg);
+      box-shadow: 0 10px 30px rgba(15, 23, 42, 0.28);
+      border: 1px solid var(--canvas-border);
+      max-width: 100%;
+      max-height: 100%;
+      border-radius: 4px;
+    }
+
+    .transport-bar {
+      height: 46px;
+      background: var(--bg-panel);
+      border-top: 1px solid var(--border);
+      padding: 0 14px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      flex-shrink: 0;
+    }
+
+    .timecode-display {
+      font-family: var(--font-mono);
+      font-size: 12.5px;
+      font-weight: 600;
+      color: var(--accent);
+      background: var(--bg-panel-alt);
+      padding: 4px 10px;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border);
+      min-width: 185px;
+      text-align: center;
+      direction: ltr;
+    }
+    .timecode-display span.total-tc {
+      color: var(--text-muted);
+      font-weight: 400;
+    }
+
+    .transport-controls {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      direction: ltr;
+    }
+
+    .btn-play {
+      width: 36px;
+      height: 32px;
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #ffffff;
+      font-weight: 800;
+    }
+    .btn-play:hover {
+      background: var(--accent-hover);
+    }
+
+    .master-volume {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      color: var(--text-secondary);
+      font-size: 12px;
+    }
+    .master-volume input[type="range"] {
+      width: 85px;
+    }
+
+    /* ==========================================================================
+       5. PANNEAU DROIT : INSPECTEUR & ÉTALONNAGE (COLOR GRADING)
+       ========================================================================== */
+    .inspector-scroll {
+      flex: 1;
+      overflow-y: auto;
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .grade-target-tabs {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      background: var(--bg-panel-alt);
+      padding: 3px;
+      border-radius: var(--radius-md);
+      border: 1px solid var(--border);
+      gap: 3px;
+    }
+
+    .grade-target-btn {
+      padding: 7px 6px;
+      border: none;
+      border-radius: 6px;
+      background: transparent;
+      color: var(--text-secondary);
+      font-size: 11.5px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.15s;
+      text-align: center;
+      line-height: 1.25;
+    }
+    .grade-target-btn.active {
+      background: var(--bg-elevated);
+      color: var(--text-primary);
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.18);
+    }
+    .grade-target-btn.active[data-mode="clip"] {
+      border-bottom: 2px solid var(--accent);
+      color: var(--accent);
+    }
+    .grade-target-btn.active[data-mode="scene"] {
+      border-bottom: 2px solid var(--accent-purple);
+      color: var(--accent-purple);
+    }
+    :root[data-theme="dark"] .grade-target-btn.active[data-mode="scene"] {
+      color: #d8b4fe;
+    }
+
+    .inspector-card {
+      background: var(--bg-panel-alt);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .inspector-card-title {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: var(--text-secondary);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .preset-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 5px;
+    }
+
+    .preset-chip {
+      background: var(--bg-elevated);
+      border: 1px solid var(--border-strong);
+      color: var(--text-primary);
+      border-radius: 5px;
+      padding: 5px 4px;
+      font-size: 11px;
+      font-weight: 500;
+      cursor: pointer;
+      text-align: center;
+      transition: all 0.12s;
+    }
+    .preset-chip:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+
+    .slider-row {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .slider-label-line {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 12px;
+      color: var(--text-secondary);
+    }
+
+    .slider-val {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--text-primary);
+      background: var(--bg-panel);
+      border: 1px solid var(--border);
+      padding: 1px 5px;
+      border-radius: 4px;
+      direction: ltr;
+    }
+
+    input[type="range"] {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 100%;
+      height: 5px;
+      background: var(--bg-elevated);
+      border-radius: 3px;
+      outline: none;
+      border: 1px solid var(--border);
+    }
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 13px;
+      height: 13px;
+      border-radius: 50%;
+      background: var(--accent);
+      cursor: pointer;
+      border: 2px solid var(--bg-panel);
+    }
+
+    .color-tint-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    input[type="color"] {
+      width: 34px;
+      height: 26px;
+      border: 1px solid var(--border-strong);
+      border-radius: 5px;
+      background: transparent;
+      cursor: pointer;
+      padding: 0;
+    }
+
+    .empty-inspector-notice {
+      padding: 16px 10px;
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 12px;
+      line-height: 1.45;
+      background: var(--bg-panel-alt);
+      border: 1px dashed var(--border-strong);
+      border-radius: var(--radius-md);
+    }
+
+    /* ==========================================================================
+       6. TIMELINE MULTIPISTE (BAS DE L'ÉCRAN — TOUJOURS LTR POUR PRÉCISION TEMPORELLE)
+       ========================================================================== */
+    .timeline-container {
+      height: 285px;
+      background: var(--bg-panel);
+      display: flex;
+      flex-direction: column;
+      flex-shrink: 0;
+    }
+
+    .timeline-toolbar {
+      height: 40px;
+      background: var(--bg-panel-alt);
+      border-bottom: 1px solid var(--border);
+      padding: 0 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    .timeline-tools-group {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .tool-sep {
+      width: 1px;
+      height: 20px;
+      background: var(--border-strong);
+      margin: 0 3px;
+    }
+
+    .timeline-body {
+      flex: 1;
+      display: flex;
+      min-height: 0;
+      position: relative;
+      overflow: hidden;
+      direction: ltr;
+    }
+
+    .track-headers {
+      width: 175px;
+      background: var(--bg-panel);
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      flex-shrink: 0;
+    }
+
+    .ruler-corner {
+      height: 28px;
+      border-bottom: 1px solid var(--border);
+      background: var(--bg-panel-alt);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 8px;
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+
+    .track-header-list {
+      flex: 1;
+      overflow: hidden;
+    }
+
+    .track-header-item {
+      height: 62px;
+      border-bottom: 1px solid var(--border);
+      padding: 6px 10px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    .track-title-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .track-tag {
+      font-size: 10px;
+      padding: 1px 5px;
+      border-radius: 4px;
+      font-weight: 700;
+    }
+    .track-tag.video { background: rgba(37, 99, 235, 0.2); color: #3b82f6; }
+    :root[data-theme="dark"] .track-tag.video { color: #93c5fd; }
+    .track-tag.audio { background: rgba(5, 150, 105, 0.2); color: #059669; }
+    :root[data-theme="dark"] .track-tag.audio { color: #6ee7b7; }
+
+    .track-controls-row {
+      display: flex;
+      gap: 4px;
+    }
+
+    .mini-toggle {
+      font-size: 10px;
+      padding: 2px 6px;
+      border-radius: 4px;
+      border: 1px solid var(--border-strong);
+      background: var(--bg-elevated);
+      color: var(--text-secondary);
+      cursor: pointer;
+    }
+    .mini-toggle.active {
+      background: var(--accent-red);
+      border-color: var(--accent-red);
+      color: #ffffff;
+    }
+
+    .timeline-scroll-area {
+      flex: 1;
+      overflow-x: auto;
+      overflow-y: auto;
+      position: relative;
+      background: var(--timeline-track-bg);
+    }
+
+    .timeline-content-inner {
+      position: relative;
+      min-height: 100%;
+    }
+
+    .time-ruler {
+      height: 28px;
+      background: var(--bg-panel-alt);
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+      z-index: 15;
+      cursor: ew-resize;
+    }
+
+    #rulerCanvas {
+      display: block;
+      height: 28px;
+    }
+
+    .tracks-lanes {
+      position: relative;
+    }
+
+    .track-lane {
+      height: 62px;
+      border-bottom: 1px solid var(--border);
+      position: relative;
+      background-image: linear-gradient(to right, var(--ruler-tick-minor) 1px, transparent 1px);
+    }
+    .track-lane.drag-over {
+      background-color: rgba(0, 210, 255, 0.1);
+    }
+
+    .timeline-clip {
+      position: absolute;
+      top: 5px;
+      height: 52px;
+      border-radius: 6px;
+      overflow: hidden;
+      cursor: grab;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      border: 1.5px solid transparent;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+      transition: box-shadow 0.1s;
+    }
+    .timeline-clip:active {
+      cursor: grabbing;
+    }
+
+    .timeline-clip.type-video {
+      background: linear-gradient(180deg, #2563eb, #1e40af);
+      border-color: var(--clip-video-border);
+    }
+    .timeline-clip.type-image {
+      background: linear-gradient(180deg, #7c3aed, #5b21b6);
+      border-color: var(--clip-image-border);
+    }
+    .timeline-clip.type-audio {
+      background: linear-gradient(180deg, #059669, #065f46);
+      border-color: var(--clip-audio-border);
+    }
+
+    .timeline-clip.selected {
+      border: 2px solid #ffffff;
+      box-shadow: 0 0 0 2px var(--accent), 0 4px 12px rgba(0, 0, 0, 0.45);
+      z-index: 8;
+    }
+
+    .timeline-clip.razor-mode {
+      cursor: crosshair;
+    }
+
+    .clip-header {
+      padding: 2px 7px;
+      font-size: 11px;
+      font-weight: 600;
+      color: #ffffff;
+      background: var(--clip-header-bg);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 4px;
+      pointer-events: none;
+    }
+
+    .clip-grade-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: #facc15;
+      flex-shrink: 0;
+    }
+
+    .clip-waveform-canvas {
+      width: 100%;
+      height: 30px;
+      display: block;
+      pointer-events: none;
+    }
+
+    .trim-handle {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      width: 8px;
+      background: rgba(255, 255, 255, 0.22);
+      cursor: ew-resize;
+      z-index: 10;
+      opacity: 0;
+      transition: opacity 0.12s;
+    }
+    .timeline-clip:hover .trim-handle,
+    .timeline-clip.selected .trim-handle {
+      opacity: 1;
+    }
+    .trim-handle:hover {
+      background: var(--accent);
+    }
+    .trim-handle.left { left: 0; border-right: 1px solid rgba(255,255,255,0.45); }
+    .trim-handle.right { right: 0; border-left: 1px solid rgba(255,255,255,0.45); }
+
+    .playhead {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      width: 2px;
+      background: var(--accent-red);
+      z-index: 25;
+      pointer-events: none;
+    }
+    .playhead-cap {
+      position: absolute;
+      top: 0;
+      left: -6px;
+      width: 14px;
+      height: 14px;
+      background: var(--accent-red);
+      clip-path: polygon(0 0, 100% 0, 100% 55%, 50% 100%, 0 55%);
+      pointer-events: auto;
+      cursor: ew-resize;
+    }
+
+    /* ==========================================================================
+       7. MODALE D'EXPORTATION & NOTIFICATIONS TOAST
+       ========================================================================== */
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.65);
+      backdrop-filter: blur(4px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+    }
+    .modal-backdrop.open {
+      display: flex;
+    }
+
+    .modal-box {
+      background: var(--bg-panel);
+      border: 1px solid var(--border-strong);
+      border-radius: var(--radius-lg);
+      width: 450px;
+      max-width: 92vw;
+      padding: 20px;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .modal-title {
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--text-primary);
+    }
+
+    .modal-desc {
+      font-size: 12.5px;
+      color: var(--text-secondary);
+      line-height: 1.5;
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .form-group label {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-secondary);
+    }
+    .form-select {
+      background: var(--bg-elevated);
+      border: 1px solid var(--border-strong);
+      color: var(--text-primary);
+      padding: 8px 10px;
+      border-radius: var(--radius-sm);
+      font-size: 13px;
+      outline: none;
+    }
+
+    .progress-bar-wrap {
+      width: 100%;
+      height: 10px;
+      background: var(--bg-elevated);
+      border-radius: 999px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+    }
+    .progress-bar-fill {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, var(--brand-start), var(--accent));
+      transition: width 0.1s linear;
+    }
+
+    .toast-container {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      z-index: 200;
+      pointer-events: none;
+    }
+
+    .toast {
+      background: var(--bg-elevated);
+      border: 1px solid var(--border-strong);
+      border-left: 4px solid var(--accent);
+      color: var(--text-primary);
+      padding: 10px 14px;
+      border-radius: var(--radius-md);
+      font-size: 12.5px;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+      animation: slideIn 0.2s ease;
+    }
+    @keyframes slideIn {
+      from { transform: translateY(12px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app-shell">
+    <!-- =====================================================================
+         BARRE SUPÉRIEURE
+         ===================================================================== -->
+    <header class="topbar">
+      <div class="brand">
+        <div class="brand-lockup" aria-label="Ecoya Studio">
+          <svg class="brand-svg-badge" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <linearGradient id="ecoyaTileGrad" x1="6" y1="6" x2="58" y2="58" gradientUnits="userSpaceOnUse">
+                <stop offset="0%" stop-color="#0f292e" />
+                <stop offset="100%" stop-color="#0b3b52" />
+              </linearGradient>
+              <linearGradient id="ecoyaLeafGrad" x1="16" y1="44" x2="48" y2="18" gradientUnits="userSpaceOnUse">
+                <stop offset="0%" stop-color="#10b981" />
+                <stop offset="60%" stop-color="#00d2ff" />
+                <stop offset="100%" stop-color="#38bdf8" />
+              </linearGradient>
+            </defs>
+            <rect x="4" y="4" width="56" height="56" rx="15" fill="url(#ecoyaTileGrad)" stroke="#10b981" stroke-opacity="0.55" stroke-width="2" />
+            <path d="M18 45C18 30 28 19 46 18C45 34 36 44 23 44" stroke="url(#ecoyaLeafGrad)" stroke-width="4.2" stroke-linecap="round" stroke-linejoin="round" />
+            <path d="M22 40C28 34 34 29 41 24" stroke="#a7f3d0" stroke-width="2" stroke-linecap="round" opacity="0.85" />
+          </svg>
+          <span class="brand-wordmark">Ecoya Studio</span>
+        </div>
+
+        <span class="brand-divider"></span>
+
+        <input
+          type="text"
+          id="projectTitleInput"
+          class="project-title-input"
+          value="Ecoya_Montage"
+          data-i18n-title="projectTitleTooltip"
+          title="Renommer le projet"
+        />
+      </div>
+
+      <div class="topbar-actions">
+        <input type="file" id="fileInputMedia" accept="video/*,image/*,audio/*" multiple hidden />
+        <button class="btn" id="btnImportTop" data-i18n="importMedia" data-i18n-title="importMediaTip">
+          + Importer Médias
+        </button>
+        <button class="btn" id="btnAddDemo" data-i18n="addDemo" data-i18n-title="addDemoTip">
+          ✦ Média Démo
+        </button>
+
+        <div class="tool-sep"></div>
+
+        <!-- Sélecteur de thème Auto (Navigateur) / Clair / Sombre -->
+        <select id="themeModeSelect" class="top-select" data-i18n-title="themeSelectorTip" title="Thème d'interface">
+          <option value="auto" data-i18n="themeAuto">Thème : Auto</option>
+          <option value="light" data-i18n="themeLight">Thème : Clair</option>
+          <option value="dark" data-i18n="themeDark">Thème : Sombre</option>
+        </select>
+
+        <!-- Sélecteur de langue (FR, EN, AR, ES, RU, ZH) -->
+        <select id="languageSelect" class="top-select" data-i18n-title="languageSelectorTip" title="Langue">
+          <option value="fr">Français (FR)</option>
+          <option value="en">English (EN)</option>
+          <option value="ar">العربية (AR)</option>
+          <option value="es">Español (ES)</option>
+          <option value="ru">Русский (RU)</option>
+          <option value="zh">中文 (ZH)</option>
+        </select>
+
+        <div class="tool-sep"></div>
+
+        <button class="btn btn-wav" id="btnExportWav" data-i18n="exportWav" data-i18n-title="exportWavTip">
+          ♫ WAV
+        </button>
+        <button class="btn btn-primary" id="btnExportVideo" data-i18n="exportVideo" data-i18n-title="exportVideoTip">
+          ⬇ Exporter MP4
+        </button>
+      </div>
+    </header>
+
+    <!-- =====================================================================
+         ESPACE SUPÉRIEUR (MÉDIAS | MONITEUR | ÉTALONNAGE & AUDIO)
+         ===================================================================== -->
+    <main class="workspace-upper">
+      <!-- PANNEAU GAUCHE : BIBLIOTHÈQUE DE MÉDIAS -->
+      <aside class="panel panel-left">
+        <div class="panel-header">
+          <span data-i18n="mediaBin">Bibliothèque Médias</span>
+          <span id="mediaCountLabel" style="color: var(--accent);">0</span>
+        </div>
+
+        <div class="media-toolbar">
+          <div class="media-toolbar-row">
+            <button class="btn" id="btnImportLeft" data-i18n="importFiles">Importer fichiers</button>
+            <button class="btn" id="btnDemoLeft" data-i18n="demoShort">+ Démo</button>
+          </div>
+        </div>
+
+        <div class="media-list" id="mediaList">
+          <div class="media-dropzone-hint" id="mediaDropzone">
+            <strong data-i18n="dropzoneTitle">Glissez vos fichiers ici</strong><br />
+            <span data-i18n="dropzoneSub">Vidéos (MP4, WebM), Images (PNG, JPG) ou Sons (WAV, MP3)</span><br />
+            <span data-i18n="dropzoneBrowse" style="color: var(--accent); display:inline-block; margin-top:4px;">ou cliquez pour parcourir</span>
+          </div>
+        </div>
+      </aside>
+
+      <!-- PANNEAU CENTRAL : MONITEUR DE PRÉVISUALISATION -->
+      <section class="monitor-area">
+        <div class="monitor-topbar">
+          <div class="aspect-switcher" id="aspectSwitcher">
+            <button class="aspect-btn active" data-aspect="16:9" data-i18n="aspect169">16:9 Paysage</button>
+            <button class="aspect-btn" data-aspect="9:16" data-i18n="aspect916">9:16 Vertical</button>
+            <button class="aspect-btn" data-aspect="1:1" data-i18n="aspect11">1:1 Carré</button>
+          </div>
+
+          <div id="sceneGradeStatus" class="scene-status-pill" data-i18n="sceneGradeNeutral">
+            Scène globale : Neutre
+          </div>
+        </div>
+
+        <div class="canvas-stage" id="canvasStage">
+          <canvas id="previewCanvas" width="1280" height="720"></canvas>
+        </div>
+
+        <div class="transport-bar">
+          <div class="timecode-display" id="timecodeDisplay">
+            00:00:00.00 <span class="total-tc">/ 00:00:00.00</span>
+          </div>
+
+          <div class="transport-controls">
+            <button class="btn btn-icon" id="btnJumpStart" data-i18n-title="jumpStartTip" title="Début">⏮</button>
+            <button class="btn btn-icon" id="btnPrevFrame" data-i18n-title="prevFrameTip" title="Image précédente">◀|</button>
+            <button class="btn btn-play" id="btnPlayPause" data-i18n-title="playPauseTip" title="Lecture / Pause">▶</button>
+            <button class="btn btn-icon" id="btnStop" data-i18n-title="stopTip" title="Stop">⏹</button>
+            <button class="btn btn-icon" id="btnNextFrame" data-i18n-title="nextFrameTip" title="Image suivante">|▶</button>
+          </div>
+
+          <div class="master-volume">
+            <span>🔊</span>
+            <input type="range" id="masterVolumeSlider" min="0" max="1.5" step="0.05" value="1" data-i18n-title="masterVolumeTip" title="Volume général" />
+            <span id="masterVolumeVal" style="min-width:34px; font-family:var(--font-mono); direction:ltr;">100%</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- PANNEAU DROIT : INSPECTEUR & ÉTALONNAGE -->
+      <aside class="panel panel-right">
+        <div class="panel-header">
+          <span data-i18n="inspectorTitle">Inspecteur & Couleurs</span>
+          <button class="mini-toggle" id="btnResetGrade" data-i18n="resetBtn">Réinitialiser</button>
+        </div>
+
+        <div class="inspector-scroll">
+          <div>
+            <div data-i18n="gradeTargetLabel" style="font-size: 11px; color: var(--text-muted); margin-bottom: 5px; font-weight:600;">
+              CIBLE DE L'ÉTALONNAGE COULEUR :
+            </div>
+            <div class="grade-target-tabs" id="gradeTargetTabs">
+              <button class="grade-target-btn active" data-mode="clip">
+                <span data-i18n="targetClip">Clip sélectionné</span><br />
+                <span data-i18n="targetClipSub" style="font-size:10px; font-weight:400; opacity:0.8;">(1 photo / vidéo)</span>
+              </button>
+              <button class="grade-target-btn" data-mode="scene">
+                <span data-i18n="targetScene">Toute la scène</span><br />
+                <span data-i18n="targetSceneSub" style="font-size:10px; font-weight:400; opacity:0.8;">(Calque global)</span>
+              </button>
+            </div>
+          </div>
+
+          <div id="gradeContextBanner" style="font-size: 11.5px; padding: 7px 9px; border-radius: 6px; background: var(--accent-dim); color: var(--accent); border: 1px solid rgba(2,132,199,0.3);">
+            Mode : Clip sélectionné
+          </div>
+
+          <div id="colorGradingControls" class="inspector-card">
+            <div class="inspector-card-title">
+              <span data-i18n="presetsTitle">Préréglages Rapides</span>
+            </div>
+            <div class="preset-grid">
+              <button class="preset-chip" data-preset="neutral" data-i18n="presetNeutral">Neutre</button>
+              <button class="preset-chip" data-preset="cinema" data-i18n="presetCinema">Cinéma</button>
+              <button class="preset-chip" data-preset="vintage" data-i18n="presetVintage">Vintage</button>
+              <button class="preset-chip" data-preset="bw" data-i18n="presetBw">Noir & Blanc</button>
+              <button class="preset-chip" data-preset="warm" data-i18n="presetWarm">Chaud</button>
+              <button class="preset-chip" data-preset="cold" data-i18n="presetCold">Froid</button>
+            </div>
+
+            <div class="inspector-card-title" style="margin-top:4px;">
+              <span data-i18n="colorSlidersTitle">Réglages Colorimétriques</span>
+            </div>
+
+            <div class="slider-row">
+              <div class="slider-label-line">
+                <span data-i18n="brightness">Luminosité</span>
+                <span class="slider-val" id="valBrightness">100%</span>
+              </div>
+              <input type="range" id="ctrlBrightness" min="0" max="200" value="100" />
+            </div>
+
+            <div class="slider-row">
+              <div class="slider-label-line">
+                <span data-i18n="contrast">Contraste</span>
+                <span class="slider-val" id="valContrast">100%</span>
+              </div>
+              <input type="range" id="ctrlContrast" min="0" max="200" value="100" />
+            </div>
+
+            <div class="slider-row">
+              <div class="slider-label-line">
+                <span data-i18n="saturation">Saturation</span>
+                <span class="slider-val" id="valSaturation">100%</span>
+              </div>
+              <input type="range" id="ctrlSaturation" min="0" max="250" value="100" />
+            </div>
+
+            <div class="slider-row">
+              <div class="slider-label-line">
+                <span data-i18n="temperature">Température</span>
+                <span class="slider-val" id="valTemperature">0</span>
+              </div>
+              <input type="range" id="ctrlTemperature" min="-100" max="100" value="0" />
+            </div>
+
+            <div class="slider-row">
+              <div class="slider-label-line">
+                <span data-i18n="hue">Teinte</span>
+                <span class="slider-val" id="valHue">0°</span>
+              </div>
+              <input type="range" id="ctrlHue" min="-180" max="180" value="0" />
+            </div>
+
+            <div class="slider-row">
+              <div class="slider-label-line">
+                <span data-i18n="sepia">Sépia</span>
+                <span class="slider-val" id="valSepia">0%</span>
+              </div>
+              <input type="range" id="ctrlSepia" min="0" max="100" value="0" />
+            </div>
+
+            <div class="slider-row">
+              <div class="slider-label-line">
+                <span data-i18n="blur">Flou</span>
+                <span class="slider-val" id="valBlur">0 px</span>
+              </div>
+              <input type="range" id="ctrlBlur" min="0" max="20" step="0.5" value="0" />
+            </div>
+
+            <div class="slider-row">
+              <div class="slider-label-line">
+                <span data-i18n="vignette">Vignette</span>
+                <span class="slider-val" id="valVignette">0%</span>
+              </div>
+              <input type="range" id="ctrlVignette" min="0" max="100" value="0" />
+            </div>
+
+            <div class="slider-row">
+              <div class="slider-label-line">
+                <span data-i18n="opacity">Opacité</span>
+                <span class="slider-val" id="valOpacity">100%</span>
+              </div>
+              <input type="range" id="ctrlOpacity" min="0" max="100" value="100" />
+            </div>
+
+            <div class="slider-row">
+              <div class="slider-label-line">
+                <span data-i18n="tint">Filtre couleur</span>
+                <span class="slider-val" id="valTintAlpha">0%</span>
+              </div>
+              <div class="color-tint-row">
+                <input type="color" id="ctrlTintColor" value="#ff6b00" />
+                <input type="range" id="ctrlTintAlpha" min="0" max="80" value="0" />
+              </div>
+            </div>
+          </div>
+
+          <div id="noClipSelectedNotice" class="empty-inspector-notice" style="display:none;" data-i18n="noClipNotice">
+            Sélectionnez une photo ou une vidéo sur la timeline pour modifier ses couleurs individuellement, ou basculez sur « Toute la scène ».
+          </div>
+
+          <div id="audioInspectorCard" class="inspector-card" style="display:none;">
+            <div class="inspector-card-title">
+              <span data-i18n="audioClipTitle">Mixage Audio du Clip</span>
+              <button class="mini-toggle" id="btnClipMute" data-i18n="muteBtn">Muet</button>
+            </div>
+
+            <div class="slider-row">
+              <div class="slider-label-line">
+                <span data-i18n="clipVolume">Volume du clip</span>
+                <span class="slider-val" id="valClipVolume">100%</span>
+              </div>
+              <input type="range" id="ctrlClipVolume" min="0" max="200" value="100" />
+            </div>
+
+            <div class="slider-row">
+              <div class="slider-label-line">
+                <span data-i18n="fadeIn">Fondu d'entrée</span>
+                <span class="slider-val" id="valClipFadeIn">0.0 s</span>
+              </div>
+              <input type="range" id="ctrlClipFadeIn" min="0" max="5" step="0.1" value="0" />
+            </div>
+
+            <div class="slider-row">
+              <div class="slider-label-line">
+                <span data-i18n="fadeOut">Fondu de sortie</span>
+                <span class="slider-val" id="valClipFadeOut">0.0 s</span>
+              </div>
+              <input type="range" id="ctrlClipFadeOut" min="0" max="5" step="0.1" value="0" />
+            </div>
+          </div>
+        </div>
+      </aside>
+    </main>
+
+    <!-- =====================================================================
+         TIMELINE MULTIPISTE (BAS)
+         ===================================================================== -->
+    <section class="timeline-container">
+      <div class="timeline-toolbar">
+        <div class="timeline-tools-group">
+          <button class="btn active-tool" id="toolSelectBtn" data-i18n="toolSelect" data-i18n-title="toolSelectTip">
+            ↖ Sélection
+          </button>
+          <button class="btn" id="toolRazorBtn" data-i18n="toolRazor" data-i18n-title="toolRazorTip">
+            ✂ Rasoir
+          </button>
+          <div class="tool-sep"></div>
+          <button class="btn" id="btnSplitAtPlayhead" data-i18n="splitHere" data-i18n-title="splitHereTip">
+            |✂ Couper (S)
+          </button>
+          <button class="btn" id="btnDuplicateClip" data-i18n="duplicate" data-i18n-title="duplicateTip">
+            ⧉ Dupliquer
+          </button>
+          <button class="btn btn-danger" id="btnDeleteClip" data-i18n="deleteClip" data-i18n-title="deleteClipTip">
+            🗑 Supprimer
+          </button>
+        </div>
+
+        <div class="timeline-tools-group">
+          <button class="btn" id="btnAddVideoTrack" data-i18n="addVideoTrack">+ Piste Vidéo</button>
+          <button class="btn" id="btnAddAudioTrack" data-i18n="addAudioTrack">+ Piste Audio</button>
+          <div class="tool-sep"></div>
+          <span data-i18n="zoomLabel" style="font-size:11.5px; color:var(--text-secondary);">Zoom</span>
+          <input type="range" id="timelineZoomSlider" min="25" max="240" value="80" style="width:105px;" />
+        </div>
+      </div>
+
+      <div class="timeline-body">
+        <div class="track-headers">
+          <div class="ruler-corner">
+            <span data-i18n="tracksHeader">PISTES</span>
+            <span id="zoomLabelVal">80 px/s</span>
+          </div>
+          <div class="track-header-list" id="trackHeaderList"></div>
+        </div>
+
+        <div class="timeline-scroll-area" id="timelineScrollArea">
+          <div class="timeline-content-inner" id="timelineContentInner">
+            <div class="time-ruler" id="timeRuler">
+              <canvas id="rulerCanvas" height="28"></canvas>
+            </div>
+            <div class="tracks-lanes" id="tracksLanes"></div>
+
+            <div class="playhead" id="playhead" style="left: 0px;">
+              <div class="playhead-cap" id="playheadCap"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <!-- =======================================================================
+       MODALE D'EXPORTATION
+       ======================================================================= -->
+  <div class="modal-backdrop" id="exportModal">
+    <div class="modal-box">
+      <div class="modal-title" id="exportModalTitle">Exporter la vidéo</div>
+      <div class="modal-desc" id="exportModalDesc"></div>
+
+      <div class="form-group" id="exportVideoOptionsGroup">
+        <label for="exportFormatSelect" data-i18n="exportFormatLabel">Format et codec vidéo :</label>
+        <select id="exportFormatSelect" class="form-select"></select>
+      </div>
+
+      <div id="exportProgressSection" style="display:none; flex-direction:column; gap:6px;">
+        <div style="display:flex; justify-content:space-between; font-size:12px;">
+          <span id="exportStatusText" data-i18n="renderingInProgress">Rendu en cours...</span>
+          <span id="exportPercentText" style="font-family:var(--font-mono);">0%</span>
+        </div>
+        <div class="progress-bar-wrap">
+          <div class="progress-bar-fill" id="exportProgressFill"></div>
+        </div>
+      </div>
+
+      <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:4px;">
+        <button class="btn" id="btnCancelExport" data-i18n="closeBtn">Fermer</button>
+        <button class="btn btn-primary" id="btnStartExport" data-i18n="startExportBtn">Lancer l'exportation</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast-container" id="toastContainer"></div>
+
+  <!-- =======================================================================
+       JAVASCRIPT PUR : I18N, THÈME AUTO, VIDÉO FLUIDE MP4, AUDIO WAV & EXPORT
+       ======================================================================= -->
+  <script>
+    (() => {
+      "use strict";
+
+      /* -----------------------------------------------------------------------
+         1. DICTIONNAIRE MULTI-LANGUES (FR, EN, AR, ES, RU, ZH)
+         ----------------------------------------------------------------------- */
+      const TRANSLATIONS = {
+        fr: {
+          pageTitle: "Ecoya Studio — Studio de Montage Vidéo & Audio",
+          projectTitleTooltip: "Renommer le projet",
+          importMedia: "+ Importer Médias",
+          importMediaTip: "Importer des vidéos MP4/WebM, images ou fichiers audio",
+          importFiles: "Importer fichiers",
+          addDemo: "✦ Média Démo",
+          addDemoTip: "Charger une scène démo et une piste musicale",
+          demoShort: "+ Démo",
+          themeAuto: "Thème : Auto",
+          themeLight: "Thème : Clair",
+          themeDark: "Thème : Sombre",
+          themeSelectorTip: "S'adapte au thème du navigateur ou force Clair/Sombre",
+          languageSelectorTip: "Choisir la langue de l'interface",
+          exportWav: "♫ WAV",
+          exportWavTip: "Exporter le mixage audio en WAV 16-bit PCM",
+          exportVideo: "⬇ Exporter MP4",
+          exportVideoTip: "Exporter la vidéo avec étalonnage et audio",
+          mediaBin: "Bibliothèque Médias",
+          filesLabel: "fichier(s)",
+          dropzoneTitle: "Glissez vos fichiers ici",
+          dropzoneSub: "Vidéos (MP4, WebM), Images (PNG, JPG) ou Sons (WAV, MP3)",
+          dropzoneBrowse: "ou cliquez pour parcourir",
+          aspect169: "16:9 Paysage",
+          aspect916: "9:16 Vertical",
+          aspect11: "1:1 Carré",
+          sceneGradeNeutral: "Scène globale : Neutre",
+          sceneGradeActive: "Scène globale : Actif",
+          jumpStartTip: "Début",
+          prevFrameTip: "Image précédente",
+          playPauseTip: "Lecture / Pause (Espace)",
+          stopTip: "Stop",
+          nextFrameTip: "Image suivante",
+          masterVolumeTip: "Volume général",
+          inspectorTitle: "Inspecteur & Couleurs",
+          resetBtn: "Réinitialiser",
+          gradeTargetLabel: "CIBLE DE L'ÉTALONNAGE COULEUR :",
+          targetClip: "Clip sélectionné",
+          targetClipSub: "(1 photo / vidéo)",
+          targetScene: "Toute la scène",
+          targetSceneSub: "(Calque global)",
+          modeClipBanner: "Mode : Étalonnage du clip sélectionné",
+          modeSceneBanner: "Mode : Étalonnage global de toute la scène",
+          noClipVisualBanner: "Aucun clip visuel sélectionné",
+          presetsTitle: "Préréglages Rapides",
+          presetNeutral: "Neutre",
+          presetCinema: "Cinéma",
+          presetVintage: "Vintage",
+          presetBw: "Noir & Blanc",
+          presetWarm: "Chaud",
+          presetCold: "Froid",
+          colorSlidersTitle: "Réglages Colorimétriques",
+          brightness: "Luminosité",
+          contrast: "Contraste",
+          saturation: "Saturation",
+          temperature: "Température",
+          hue: "Teinte",
+          sepia: "Sépia",
+          blur: "Flou",
+          vignette: "Vignette",
+          opacity: "Opacité",
+          tint: "Filtre couleur",
+          noClipNotice: "Sélectionnez une photo ou une vidéo sur la timeline pour modifier ses couleurs individuellement, ou basculez sur « Toute la scène ».",
+          audioClipTitle: "Mixage Audio du Clip",
+          muteBtn: "Muet",
+          mutedBtn: "Coupé",
+          clipVolume: "Volume du clip",
+          fadeIn: "Fondu d'entrée",
+          fadeOut: "Fondu de sortie",
+          toolSelect: "↖ Sélection",
+          toolSelectTip: "Outil Sélection et déplacement (V)",
+          toolRazor: "✂ Rasoir",
+          toolRazorTip: "Cliquer sur un clip pour le couper (C)",
+          splitHere: "|✂ Couper (S)",
+          splitHereTip: "Couper le clip sélectionné à la tête de lecture (S)",
+          duplicate: "⧉ Dupliquer",
+          duplicateTip: "Dupliquer le clip sélectionné (Ctrl+D)",
+          deleteClip: "🗑 Supprimer",
+          deleteClipTip: "Supprimer le clip sélectionné (Suppr)",
+          addVideoTrack: "+ Piste Vidéo",
+          addAudioTrack: "+ Piste Audio",
+          zoomLabel: "Zoom",
+          tracksHeader: "PISTES",
+          exportFormatLabel: "Format et codec vidéo :",
+          renderingInProgress: "Rendu en cours...",
+          closeBtn: "Fermer",
+          startExportBtn: "Lancer l'exportation",
+          exportVideoModalTitle: "Exporter la Vidéo — Ecoya Studio",
+          exportWavModalTitle: "Exporter l'Audio WAV — Ecoya Studio",
+          toastEmptyTimeline: "Votre timeline est vide. Ajoutez un média d'abord.",
+          toastSplitOk: "Séquence coupée en deux.",
+          toastDeletedOk: "Séquence supprimée.",
+          toastDuplicatedOk: "Séquence dupliquée.",
+          toastResetOk: "Étalonnage réinitialisé.",
+          toastDemoOk: "Médias de démonstration ajoutés."
+        },
+        en: {
+          pageTitle: "Ecoya Studio — Video & Audio Editing Studio",
+          projectTitleTooltip: "Rename project",
+          importMedia: "+ Import Media",
+          importMediaTip: "Import MP4/WebM videos, images, or audio files",
+          importFiles: "Import files",
+          addDemo: "✦ Demo Media",
+          addDemoTip: "Load a demo visual scene and audio track",
+          demoShort: "+ Demo",
+          themeAuto: "Theme: Auto",
+          themeLight: "Theme: Light",
+          themeDark: "Theme: Dark",
+          themeSelectorTip: "Follow browser theme or force Light/Dark",
+          languageSelectorTip: "Choose interface language",
+          exportWav: "♫ WAV",
+          exportWavTip: "Export mixed audio as 16-bit PCM WAV",
+          exportVideo: "⬇ Export MP4",
+          exportVideoTip: "Export video with color grading and audio",
+          mediaBin: "Media Library",
+          filesLabel: "file(s)",
+          dropzoneTitle: "Drop your files here",
+          dropzoneSub: "Videos (MP4, WebM), Images (PNG, JPG) or Audio (WAV, MP3)",
+          dropzoneBrowse: "or click to browse",
+          aspect169: "16:9 Landscape",
+          aspect916: "9:16 Vertical",
+          aspect11: "1:1 Square",
+          sceneGradeNeutral: "Global Scene: Neutral",
+          sceneGradeActive: "Global Scene: Active",
+          jumpStartTip: "Start",
+          prevFrameTip: "Previous frame",
+          playPauseTip: "Play / Pause (Space)",
+          stopTip: "Stop",
+          nextFrameTip: "Next frame",
+          masterVolumeTip: "Master volume",
+          inspectorTitle: "Inspector & Color",
+          resetBtn: "Reset",
+          gradeTargetLabel: "COLOR GRADING TARGET:",
+          targetClip: "Selected clip",
+          targetClipSub: "(1 photo / video)",
+          targetScene: "Entire scene",
+          targetSceneSub: "(Global layer)",
+          modeClipBanner: "Mode: Selected clip color grading",
+          modeSceneBanner: "Mode: Global entire scene grading",
+          noClipVisualBanner: "No visual clip selected",
+          presetsTitle: "Quick Presets",
+          presetNeutral: "Neutral",
+          presetCinema: "Cinema",
+          presetVintage: "Vintage",
+          presetBw: "Black & White",
+          presetWarm: "Warm",
+          presetCold: "Cold",
+          colorSlidersTitle: "Color Adjustments",
+          brightness: "Brightness",
+          contrast: "Contrast",
+          saturation: "Saturation",
+          temperature: "Temperature",
+          hue: "Hue",
+          sepia: "Sepia",
+          blur: "Blur",
+          vignette: "Vignette",
+          opacity: "Opacity",
+          tint: "Color Tint",
+          noClipNotice: "Select a photo or video clip on the timeline to color grade it individually, or switch to « Entire scene ».",
+          audioClipTitle: "Clip Audio Mix",
+          muteBtn: "Mute",
+          mutedBtn: "Muted",
+          clipVolume: "Clip volume",
+          fadeIn: "Fade in",
+          fadeOut: "Fade out",
+          toolSelect: "↖ Select",
+          toolSelectTip: "Select & move tool (V)",
+          toolRazor: "✂ Razor",
+          toolRazorTip: "Click a clip to cut it (C)",
+          splitHere: "|✂ Split (S)",
+          splitHereTip: "Split selected clip at playhead (S)",
+          duplicate: "⧉ Duplicate",
+          duplicateTip: "Duplicate selected clip (Ctrl+D)",
+          deleteClip: "🗑 Delete",
+          deleteClipTip: "Delete selected clip (Del)",
+          addVideoTrack: "+ Video Track",
+          addAudioTrack: "+ Audio Track",
+          zoomLabel: "Zoom",
+          tracksHeader: "TRACKS",
+          exportFormatLabel: "Video format & codec:",
+          renderingInProgress: "Rendering...",
+          closeBtn: "Close",
+          startExportBtn: "Start Export",
+          exportVideoModalTitle: "Export Video — Ecoya Studio",
+          exportWavModalTitle: "Export WAV Audio — Ecoya Studio",
+          toastEmptyTimeline: "Your timeline is empty. Add media first.",
+          toastSplitOk: "Clip split into two.",
+          toastDeletedOk: "Clip deleted.",
+          toastDuplicatedOk: "Clip duplicated.",
+          toastResetOk: "Color grading reset.",
+          toastDemoOk: "Demo media added."
+        },
+        ar: {
+          pageTitle: "إيكويا ستوديو — استوديو مونتاج الفيديو والصوت",
+          projectTitleTooltip: "إعادة تسمية المشروع",
+          importMedia: "+ استيراد وسائط",
+          importMediaTip: "استيراد فيديوهات MP4/WebM أو صور أو ملفات صوتية",
+          importFiles: "استيراد ملفات",
+          addDemo: "✦ وسائط تجريبية",
+          addDemoTip: "إضافة مشهد وصوت تجريبي",
+          demoShort: "+ تجريبي",
+          themeAuto: "المظهر: تلقائي",
+          themeLight: "المظهر: فاتح",
+          themeDark: "المظهر: داكن",
+          themeSelectorTip: "يتبع مظهر المتصفح أو يفرض الفاتح/الداكن",
+          languageSelectorTip: "اختر لغة الواجهة",
+          exportWav: "♫ WAV",
+          exportWavTip: "تصدير الصوت المدمج بصيغة WAV 16-bit",
+          exportVideo: "⬇ تصدير MP4",
+          exportVideoTip: "تصدير الفيديو مع تدرج الألوان والصوت",
+          mediaBin: "مكتبة الوسائط",
+          filesLabel: "ملف",
+          dropzoneTitle: "اسحب الملفات هنا",
+          dropzoneSub: "فيديو (MP4, WebM)، صور (PNG, JPG) أو صوت (WAV, MP3)",
+          dropzoneBrowse: "أو انقر للاستعراض",
+          aspect169: "16:9 أفقي",
+          aspect916: "9:16 عمودي",
+          aspect11: "1:1 مربع",
+          sceneGradeNeutral: "المشهد العام: محايد",
+          sceneGradeActive: "المشهد العام: نشط",
+          jumpStartTip: "البداية",
+          prevFrameTip: "الإطار السابق",
+          playPauseTip: "تشغيل / إيقاف مؤقت (Space)",
+          stopTip: "إيقاف",
+          nextFrameTip: "الإطار التالي",
+          masterVolumeTip: "مستوى الصوت العام",
+          inspectorTitle: "المفتش والألوان",
+          resetBtn: "إعادة ضبط",
+          gradeTargetLabel: "هدف تدرج الألوان:",
+          targetClip: "المقطع المحدد",
+          targetClipSub: "(صورة / فيديو واحد)",
+          targetScene: "المشهد بالكامل",
+          targetSceneSub: "(طبقة شاملة)",
+          modeClipBanner: "الوضع: تلوين المقطع المحدد",
+          modeSceneBanner: "الوضع: تلوين المشهد بالكامل",
+          noClipVisualBanner: "لم يتم تحديد مقطع مرئي",
+          presetsTitle: "إعدادات سريعة",
+          presetNeutral: "محايد",
+          presetCinema: "سينمائي",
+          presetVintage: "كلاسيكي",
+          presetBw: "أبيض وأسود",
+          presetWarm: "دافئ",
+          presetCold: "بارد",
+          colorSlidersTitle: "ضبط الألوان",
+          brightness: "السطوع",
+          contrast: "التباين",
+          saturation: "التشبع اللوني",
+          temperature: "الحرارة اللونية",
+          hue: "درجة اللون",
+          sepia: "سيبيا",
+          blur: "التمويه",
+          vignette: "تظليل الحواف",
+          opacity: "الشفافية",
+          tint: "صبغة لونية",
+          noClipNotice: "اختر صورة أو مقطع فيديو على الخط الزمني لتلوينه بشكل مستقل، أو انتقل إلى « المشهد بالكامل ».",
+          audioClipTitle: "مزج صوت المقطع",
+          muteBtn: "كتم",
+          mutedBtn: "مكتوم",
+          clipVolume: "صوت المقطع",
+          fadeIn: "تلاشي دخول",
+          fadeOut: "تلاشي خروج",
+          toolSelect: "↖ تحديد",
+          toolSelectTip: "أداة التحديد والتحريك (V)",
+          toolRazor: "✂ شفرة القص",
+          toolRazorTip: "انقر على مقطع لقصه (C)",
+          splitHere: "|✂ قص هنا (S)",
+          splitHereTip: "قص المقطع عند مؤشر التشغيل (S)",
+          duplicate: "⧉ تكرار",
+          duplicateTip: "تكرار المقطع المحدد (Ctrl+D)",
+          deleteClip: "🗑 حذف",
+          deleteClipTip: "حذف المقطع المحدد (Delete)",
+          addVideoTrack: "+ مسار فيديو",
+          addAudioTrack: "+ مسار صوت",
+          zoomLabel: "تكبير",
+          tracksHeader: "المسارات",
+          exportFormatLabel: "صيغة وترميز الفيديو:",
+          renderingInProgress: "جارٍ المعالجة...",
+          closeBtn: "إغلاق",
+          startExportBtn: "بدء التصدير",
+          exportVideoModalTitle: "تصدير الفيديو — Ecoya Studio",
+          exportWavModalTitle: "تصدير صوت WAV — Ecoya Studio",
+          toastEmptyTimeline: "الخط الزمني فارغ. أضف وسائط أولاً.",
+          toastSplitOk: "تم تقسيم المقطع.",
+          toastDeletedOk: "تم حذف المقطع.",
+          toastDuplicatedOk: "تم تكرار المقطع.",
+          toastResetOk: "تمت إعادة ضبط الألوان.",
+          toastDemoOk: "تمت إضافة الوسائط التجريبية."
+        },
+        es: {
+          pageTitle: "Ecoya Studio — Estudio de Edición de Video y Audio",
+          projectTitleTooltip: "Renombrar proyecto",
+          importMedia: "+ Importar Medios",
+          importMediaTip: "Importar videos MP4/WebM, imágenes o audio",
+          importFiles: "Importar archivos",
+          addDemo: "✦ Demo",
+          addDemoTip: "Cargar escena y pista de audio de demostración",
+          demoShort: "+ Demo",
+          themeAuto: "Tema: Auto",
+          themeLight: "Tema: Claro",
+          themeDark: "Tema: Oscuro",
+          themeSelectorTip: "Sigue al navegador o fuerza Claro/Oscuro",
+          languageSelectorTip: "Seleccionar idioma",
+          exportWav: "♫ WAV",
+          exportWavTip: "Exportar audio mezclado en WAV 16-bit PCM",
+          exportVideo: "⬇ Exportar MP4",
+          exportVideoTip: "Exportar video con color y audio",
+          mediaBin: "Biblioteca de Medios",
+          filesLabel: "archivo(s)",
+          dropzoneTitle: "Arrastra tus archivos aquí",
+          dropzoneSub: "Videos (MP4, WebM), Imágenes (PNG, JPG) o Audio (WAV, MP3)",
+          dropzoneBrowse: "o haz clic para explorar",
+          aspect169: "16:9 Horizontal",
+          aspect916: "9:16 Vertical",
+          aspect11: "1:1 Cuadrado",
+          sceneGradeNeutral: "Escena global: Neutro",
+          sceneGradeActive: "Escena global: Activo",
+          jumpStartTip: "Inicio",
+          prevFrameTip: "Fotograma anterior",
+          playPauseTip: "Reproducir / Pausar (Espacio)",
+          stopTip: "Detener",
+          nextFrameTip: "Fotograma siguiente",
+          masterVolumeTip: "Volumen general",
+          inspectorTitle: "Inspector y Color",
+          resetBtn: "Restablecer",
+          gradeTargetLabel: "OBJETIVO DE COLOR:",
+          targetClip: "Clip seleccionado",
+          targetClipSub: "(1 foto / video)",
+          targetScene: "Toda la escena",
+          targetSceneSub: "(Capa global)",
+          modeClipBanner: "Modo: Color del clip seleccionado",
+          modeSceneBanner: "Modo: Color global de toda la escena",
+          noClipVisualBanner: "Ningún clip visual seleccionado",
+          presetsTitle: "Ajustes Preestablecidos",
+          presetNeutral: "Neutro",
+          presetCinema: "Cine",
+          presetVintage: "Vintage",
+          presetBw: "Blanco y Negro",
+          presetWarm: "Cálido",
+          presetCold: "Frío",
+          colorSlidersTitle: "Ajustes de Color",
+          brightness: "Brillo",
+          contrast: "Contraste",
+          saturation: "Saturación",
+          temperature: "Temperatura",
+          hue: "Tono",
+          sepia: "Sepia",
+          blur: "Desenfoque",
+          vignette: "Viñeta",
+          opacity: "Opacidad",
+          tint: "Tinte de color",
+          noClipNotice: "Selecciona una foto o video en la línea de tiempo para colorearlo por separado, o cambia a « Toda la escena ».",
+          audioClipTitle: "Mezcla de Audio del Clip",
+          muteBtn: "Silenciar",
+          mutedBtn: "Silenciado",
+          clipVolume: "Volumen del clip",
+          fadeIn: "Entrada gradual",
+          fadeOut: "Salida gradual",
+          toolSelect: "↖ Seleccionar",
+          toolSelectTip: "Herramienta seleccionar y mover (V)",
+          toolRazor: "✂ Cuchilla",
+          toolRazorTip: "Haz clic en un clip para cortarlo (C)",
+          splitHere: "|✂ Cortar (S)",
+          splitHereTip: "Cortar clip en el cabezal (S)",
+          duplicate: "⧉ Duplicar",
+          duplicateTip: "Duplicar clip seleccionado (Ctrl+D)",
+          deleteClip: "🗑 Eliminar",
+          deleteClipTip: "Eliminar clip seleccionado (Supr)",
+          addVideoTrack: "+ Pista Video",
+          addAudioTrack: "+ Pista Audio",
+          zoomLabel: "Zoom",
+          tracksHeader: "PISTAS",
+          exportFormatLabel: "Formato y códec de video:",
+          renderingInProgress: "Renderizando...",
+          closeBtn: "Cerrar",
+          startExportBtn: "Iniciar Exportación",
+          exportVideoModalTitle: "Exportar Video — Ecoya Studio",
+          exportWavModalTitle: "Exportar Audio WAV — Ecoya Studio",
+          toastEmptyTimeline: "La línea de tiempo está vacía.",
+          toastSplitOk: "Clip dividido en dos.",
+          toastDeletedOk: "Clip eliminado.",
+          toastDuplicatedOk: "Clip duplicado.",
+          toastResetOk: "Color restablecido.",
+          toastDemoOk: "Medios de demostración añadidos."
+        },
+        ru: {
+          pageTitle: "Ecoya Studio — Студия видео- и аудиомонтажа",
+          projectTitleTooltip: "Переименовать проект",
+          importMedia: "+ Импорт медиа",
+          importMediaTip: "Импорт видео MP4/WebM, изображений или аудио",
+          importFiles: "Импорт файлов",
+          addDemo: "✦ Демо-медиа",
+          addDemoTip: "Добавить демо-сцену и аудиодорожку",
+          demoShort: "+ Демо",
+          themeAuto: "Тема: Авто",
+          themeLight: "Тема: Светлая",
+          themeDark: "Тема: Тёмная",
+          themeSelectorTip: "Следовать теме браузера или выбрать светлую/тёмную",
+          languageSelectorTip: "Выберите язык интерфейса",
+          exportWav: "♫ WAV",
+          exportWavTip: "Экспорт сведённого аудио в WAV 16-bit PCM",
+          exportVideo: "⬇ Экспорт MP4",
+          exportVideoTip: "Экспорт видео с цветокоррекцией и звуком",
+          mediaBin: "Медиатека",
+          filesLabel: "файл(ов)",
+          dropzoneTitle: "Перетащите файлы сюда",
+          dropzoneSub: "Видео (MP4, WebM), изображения (PNG, JPG) или звук (WAV, MP3)",
+          dropzoneBrowse: "или нажмите для выбора",
+          aspect169: "16:9 Горизонт.",
+          aspect916: "9:16 Вертик.",
+          aspect11: "1:1 Квадрат",
+          sceneGradeNeutral: "Вся сцена: Нейтрально",
+          sceneGradeActive: "Вся сцена: Активно",
+          jumpStartTip: "В начало",
+          prevFrameTip: "Предыдущий кадр",
+          playPauseTip: "Воспроизведение / Пауза (Space)",
+          stopTip: "Стоп",
+          nextFrameTip: "Следующий кадр",
+          masterVolumeTip: "Общая громкость",
+          inspectorTitle: "Инспектор и цвет",
+          resetBtn: "Сброс",
+          gradeTargetLabel: "ОБЪЕКТ ЦВЕТОКОРРЕКЦИИ:",
+          targetClip: "Выбранный клип",
+          targetClipSub: "(1 фото / видео)",
+          targetScene: "Вся сцена",
+          targetSceneSub: "(Общий слой)",
+          modeClipBanner: "Режим: цвет выбранного клипа",
+          modeSceneBanner: "Режим: общий цвет всей сцены",
+          noClipVisualBanner: "Визуальный клип не выбран",
+          presetsTitle: "Быстрые пресеты",
+          presetNeutral: "Нейтрально",
+          presetCinema: "Кино",
+          presetVintage: "Винтаж",
+          presetBw: "Ч/Б",
+          presetWarm: "Тёплый",
+          presetCold: "Холодный",
+          colorSlidersTitle: "Настройки цвета",
+          brightness: "Яркость",
+          contrast: "Контраст",
+          saturation: "Насыщенность",
+          temperature: "Температура",
+          hue: "Оттенок",
+          sepia: "Сепия",
+          blur: "Размытие",
+          vignette: "Виньетка",
+          opacity: "Непрозрачность",
+          tint: "Цветовой тон",
+          noClipNotice: "Выберите фото или видео на шкале времени для отдельной цветокоррекции или переключитесь на « Вся сцена ».",
+          audioClipTitle: "Звук клипа",
+          muteBtn: "Без звука",
+          mutedBtn: "Отключён",
+          clipVolume: "Громкость клипа",
+          fadeIn: "Плавный вход",
+          fadeOut: "Плавный выход",
+          toolSelect: "↖ Выбор",
+          toolSelectTip: "Выбор и перемещение (V)",
+          toolRazor: "✂ Лезвие",
+          toolRazorTip: "Нажмите на клип для разрезания (C)",
+          splitHere: "|✂ Разрезать (S)",
+          splitHereTip: "Разрезать клип на курсоре (S)",
+          duplicate: "⧉ Дублировать",
+          duplicateTip: "Дублировать выбранный клип (Ctrl+D)",
+          deleteClip: "🗑 Удалить",
+          deleteClipTip: "Удалить выбранный клип (Del)",
+          addVideoTrack: "+ Видеодорожка",
+          addAudioTrack: "+ Аудиодорожка",
+          zoomLabel: "Масштаб",
+          tracksHeader: "ДОРОЖКИ",
+          exportFormatLabel: "Формат и кодек видео:",
+          renderingInProgress: "Рендеринг...",
+          closeBtn: "Закрыть",
+          startExportBtn: "Начать экспорт",
+          exportVideoModalTitle: "Экспорт видео — Ecoya Studio",
+          exportWavModalTitle: "Экспорт аудио WAV — Ecoya Studio",
+          toastEmptyTimeline: "Шкала времени пуста. Сначала добавьте медиа.",
+          toastSplitOk: "Клип разделён.",
+          toastDeletedOk: "Клип удалён.",
+          toastDuplicatedOk: "Клип продублирован.",
+          toastResetOk: "Цветокоррекция сброшена.",
+          toastDemoOk: "Демо-материалы добавлены."
+        },
+        zh: {
+          pageTitle: "Ecoya Studio — 视频与音频剪辑工作室",
+          projectTitleTooltip: "重命名项目",
+          importMedia: "+ 导入素材",
+          importMediaTip: "导入 MP4/WebM 视频、图片或音频文件",
+          importFiles: "导入文件",
+          addDemo: "✦ 演示素材",
+          addDemoTip: "加载演示画面与音轨",
+          demoShort: "+ 演示",
+          themeAuto: "主题：自动",
+          themeLight: "主题：浅色",
+          themeDark: "主题：深色",
+          themeSelectorTip: "跟随浏览器主题或手动切换浅色/深色",
+          languageSelectorTip: "选择界面语言",
+          exportWav: "♫ WAV",
+          exportWavTip: "导出 16-bit PCM WAV 混音音频",
+          exportVideo: "⬇ 导出 MP4",
+          exportVideoTip: "导出包含调色与音频的视频",
+          mediaBin: "素材库",
+          filesLabel: "个文件",
+          dropzoneTitle: "将文件拖放到此处",
+          dropzoneSub: "支持视频 (MP4, WebM)、图片 (PNG, JPG) 或音频 (WAV, MP3)",
+          dropzoneBrowse: "或点击浏览文件",
+          aspect169: "16:9 横屏",
+          aspect916: "9:16 竖屏",
+          aspect11: "1:1 方形",
+          sceneGradeNeutral: "全局场景：中性",
+          sceneGradeActive: "全局场景：已调色",
+          jumpStartTip: "回到开头",
+          prevFrameTip: "上一帧",
+          playPauseTip: "播放 / 暂停 (Space)",
+          stopTip: "停止",
+          nextFrameTip: "下一帧",
+          masterVolumeTip: "主音量",
+          inspectorTitle: "检查器与调色",
+          resetBtn: "重置",
+          gradeTargetLabel: "调色作用目标：",
+          targetClip: "当前选中片段",
+          targetClipSub: "（单张图片/视频）",
+          targetScene: "整个场景",
+          targetSceneSub: "（全局调色层）",
+          modeClipBanner: "模式：当前选中片段调色",
+          modeSceneBanner: "模式：整个场景全局调色",
+          noClipVisualBanner: "未选中视频或图片片段",
+          presetsTitle: "快速预设",
+          presetNeutral: "中性",
+          presetCinema: "电影感",
+          presetVintage: "复古",
+          presetBw: "黑白",
+          presetWarm: "暖色",
+          presetCold: "冷色",
+          colorSlidersTitle: "色彩参数调节",
+          brightness: "亮度",
+          contrast: "对比度",
+          saturation: "饱和度",
+          temperature: "色温",
+          hue: "色相",
+          sepia: "棕褐色",
+          blur: "模糊",
+          vignette: "暗角",
+          opacity: "不透明度",
+          tint: "色彩叠加",
+          noClipNotice: "在时间轴上选择图片或视频片段即可单独调色，或切换到“整个场景”。",
+          audioClipTitle: "片段音频混合",
+          muteBtn: "静音",
+          mutedBtn: "已静音",
+          clipVolume: "片段音量",
+          fadeIn: "淡入",
+          fadeOut: "淡出",
+          toolSelect: "↖ 选择",
+          toolSelectTip: "选择与拖动工具 (V)",
+          toolRazor: "✂ 剃刀裁剪",
+          toolRazorTip: "点击片段进行分割 (C)",
+          splitHere: "|✂ 分割 (S)",
+          splitHereTip: "在播放头处分割选中片段 (S)",
+          duplicate: "⧉ 复制",
+          duplicateTip: "复制选中片段 (Ctrl+D)",
+          deleteClip: "🗑 删除",
+          deleteClipTip: "删除选中片段 (Delete)",
+          addVideoTrack: "+ 视频轨道",
+          addAudioTrack: "+ 音频轨道",
+          zoomLabel: "缩放",
+          tracksHeader: "轨道",
+          exportFormatLabel: "视频格式与编码：",
+          renderingInProgress: "正在渲染...",
+          closeBtn: "关闭",
+          startExportBtn: "开始导出",
+          exportVideoModalTitle: "导出视频 — Ecoya Studio",
+          exportWavModalTitle: "导出 WAV 音频 — Ecoya Studio",
+          toastEmptyTimeline: "时间轴为空，请先添加素材。",
+          toastSplitOk: "片段已分割。",
+          toastDeletedOk: "片段已删除。",
+          toastDuplicatedOk: "片段已复制。",
+          toastResetOk: "调色已重置。",
+          toastDemoOk: "已添加演示素材。"
+        }
+      };
+
+      function detectBrowserLanguage() {
+        const langs = navigator.languages && navigator.languages.length
+          ? navigator.languages
+          : [navigator.language || "fr"];
+        for (const raw of langs) {
+          const code = String(raw).toLowerCase().split("-")[0];
+          if (TRANSLATIONS[code]) return code;
+        }
+        return "fr";
+      }
+
+      /* -----------------------------------------------------------------------
+         2. UTILITAIRES & CONSTANTES
+         ----------------------------------------------------------------------- */
+      const FPS = 30;
+      const MIN_CLIP_DURATION = 0.25;
+
+      function uid(prefix = "id") {
+        return `${prefix}_${Math.random().toString(36).slice(2, 9)}_${Date.now().toString(36)}`;
+      }
+
+      function clamp(val, min, max) {
+        return Math.max(min, Math.min(max, val));
+      }
+
+      function formatTimecode(sec) {
+        if (!Number.isFinite(sec) || sec < 0) sec = 0;
+        const hrs = Math.floor(sec / 3600);
+        const mins = Math.floor((sec % 3600) / 60);
+        const secs = Math.floor(sec % 60);
+        const frames = Math.floor((sec % 1) * FPS);
+        return (
+          String(hrs).padStart(2, "0") + ":" +
+          String(mins).padStart(2, "0") + ":" +
+          String(secs).padStart(2, "0") + "." +
+          String(frames).padStart(2, "0")
+        );
+      }
+
+      function formatShortDuration(sec) {
+        if (!Number.isFinite(sec) || sec < 0) sec = 0;
+        const m = Math.floor(sec / 60);
+        const s = Math.floor(sec % 60);
+        return `${m}:${String(s).padStart(2, "0")}`;
+      }
+
+      function defaultColorGrade() {
+        return {
+          brightness: 100,
+          contrast: 100,
+          saturation: 100,
+          temperature: 0,
+          hue: 0,
+          sepia: 0,
+          blur: 0,
+          vignette: 0,
+          opacity: 100,
+          tintColor: "#ff6b00",
+          tintAlpha: 0
+        };
+      }
+
+      function isGradeModified(g) {
+        if (!g) return false;
+        return (
+          g.brightness !== 100 ||
+          g.contrast !== 100 ||
+          g.saturation !== 100 ||
+          g.temperature !== 0 ||
+          g.hue !== 0 ||
+          g.sepia !== 0 ||
+          g.blur !== 0 ||
+          g.vignette !== 0 ||
+          g.opacity !== 100 ||
+          g.tintAlpha !== 0
+        );
+      }
+
+      const COLOR_PRESETS = {
+        neutral: defaultColorGrade(),
+        cinema: {
+          brightness: 96,
+          contrast: 122,
+          saturation: 112,
+          temperature: -14,
+          hue: -4,
+          sepia: 8,
+          blur: 0,
+          vignette: 35,
+          opacity: 100,
+          tintColor: "#0ea5e9",
+          tintAlpha: 10
+        },
+        vintage: {
+          brightness: 104,
+          contrast: 92,
+          saturation: 78,
+          temperature: 28,
+          hue: 6,
+          sepia: 42,
+          blur: 0,
+          vignette: 45,
+          opacity: 100,
+          tintColor: "#d97706",
+          tintAlpha: 14
+        },
+        bw: {
+          brightness: 102,
+          contrast: 132,
+          saturation: 0,
+          temperature: 0,
+          hue: 0,
+          sepia: 0,
+          blur: 0,
+          vignette: 25,
+          opacity: 100,
+          tintColor: "#ffffff",
+          tintAlpha: 0
+        },
+        warm: {
+          brightness: 105,
+          contrast: 108,
+          saturation: 122,
+          temperature: 45,
+          hue: 4,
+          sepia: 12,
+          blur: 0,
+          vignette: 12,
+          opacity: 100,
+          tintColor: "#f97316",
+          tintAlpha: 14
+        },
+        cold: {
+          brightness: 98,
+          contrast: 110,
+          saturation: 92,
+          temperature: -48,
+          hue: -8,
+          sepia: 0,
+          blur: 0,
+          vignette: 18,
+          opacity: 100,
+          tintColor: "#38bdf8",
+          tintAlpha: 16
+        }
+      };
+
+      function showToast(message, accentColor = "var(--accent)") {
+        const container = document.getElementById("toastContainer");
+        const el = document.createElement("div");
+        el.className = "toast";
+        el.style.borderLeftColor = accentColor;
+        el.textContent = message;
+        container.appendChild(el);
+        setTimeout(() => {
+          el.style.opacity = "0";
+          el.style.transition = "opacity 0.25s";
+          setTimeout(() => el.remove(), 260);
+        }, 3200);
+      }
+
+      /* -----------------------------------------------------------------------
+         2. ÉTAT GLOBAL DE L'APPLICATION
+         ----------------------------------------------------------------------- */
+      const state = {
+        lang: detectBrowserLanguage(),
+        themeMode: "auto", // "auto" | "light" | "dark"
+        mediaItems: [],
+        tracks: [
+          { id: "track_v2", name: "Vidéo / Incrustation V2", type: "video", muted: false },
+          { id: "track_v1", name: "Vidéo / Images V1", type: "video", muted: false },
+          { id: "track_a1", name: "Audio Principal A1", type: "audio", muted: false }
+        ],
+        clips: [],
+        selectedClipId: null,
+        gradeTargetMode: "clip", // "clip" | "scene"
+        sceneGrade: defaultColorGrade(),
+        activeTool: "select", // "select" | "razor"
+        aspectRatio: "16:9",
+        currentTime: 0,
+        isPlaying: false,
+        isExporting: false,
+        pixelsPerSecond: 80,
+        masterVolume: 1.0,
+        lastFramePerf: 0
+      };
+
+      function t(key) {
+        const dict = TRANSLATIONS[state.lang] || TRANSLATIONS.fr;
+        return dict[key] !== undefined ? dict[key] : (TRANSLATIONS.fr[key] || key);
+      }
+
+      /* Gestion automatique du thème clair / sombre selon le navigateur */
+      const preferredColorSchemeMedia = window.matchMedia("(prefers-color-scheme: light)");
+
+      function applyTheme() {
+        let resolvedTheme = state.themeMode;
+        if (state.themeMode === "auto") {
+          resolvedTheme = preferredColorSchemeMedia.matches ? "light" : "dark";
+        }
+        document.documentElement.setAttribute("data-theme", resolvedTheme);
+        renderTimeline();
+        renderPreviewFrame();
+      }
+
+      function applyLanguage(langCode) {
+        state.lang = TRANSLATIONS[langCode] ? langCode : "fr";
+        document.documentElement.lang = state.lang;
+        document.documentElement.dir = state.lang === "ar" ? "rtl" : "ltr";
+        document.title = t("pageTitle");
+
+        const langSelect = document.getElementById("languageSelect");
+        if (langSelect && langSelect.value !== state.lang) {
+          langSelect.value = state.lang;
+        }
+
+        document.querySelectorAll("[data-i18n]").forEach(el => {
+          const k = el.getAttribute("data-i18n");
+          el.textContent = t(k);
+        });
+
+        document.querySelectorAll("[data-i18n-title]").forEach(el => {
+          const k = el.getAttribute("data-i18n-title");
+          el.title = t(k);
+        });
+
+        renderMediaLibrary();
+        updateInspectorUI();
+        renderTimeline();
+      }
+
+      preferredColorSchemeMedia.addEventListener("change", () => {
+        if (state.themeMode === "auto") {
+          applyTheme();
+        }
+      });
+
+      /* -----------------------------------------------------------------------
+         3. MOTEUR WEB AUDIO (SYNCHRONISATION TEMPS RÉEL + WAV OFFLINE)
+         ----------------------------------------------------------------------- */
+      class AudioEngine {
+        constructor() {
+          this.ctx = null;
+          this.masterGain = null;
+          this.activeNodes = new Map(); // clipId -> { source, gain }
+        }
+
+        ensureContext() {
+          if (!this.ctx) {
+            const AudioCtx = window.AudioContext || window.webkitAudioContext;
+            this.ctx = new AudioCtx();
+            this.masterGain = this.ctx.createGain();
+            this.masterGain.gain.value = state.masterVolume;
+            this.masterGain.connect(this.ctx.destination);
+          }
+          if (this.ctx.state === "suspended") {
+            this.ctx.resume();
+          }
+        }
+
+        setMasterVolume(val) {
+          if (this.masterGain) {
+            this.masterGain.gain.value = val;
+          }
+        }
+
+        stopAll() {
+          for (const [, nodeObj] of this.activeNodes) {
+            try {
+              nodeObj.source.stop();
+              nodeObj.source.disconnect();
+              nodeObj.gain.disconnect();
+            } catch (_) {}
+          }
+          this.activeNodes.clear();
+        }
+
+        syncPlayback(currentTime, destinationNode = null) {
+          this.ensureContext();
+          const dest = destinationNode || this.masterGain;
+          const now = this.ctx.currentTime;
+
+          // Identifier quels clips doivent jouer à currentTime
+          const shouldPlayIds = new Set();
+
+          for (const clip of state.clips) {
+            const track = state.tracks.find(t => t.id === clip.trackId);
+            if (!track || track.muted || clip.muted) continue;
+
+            const media = state.mediaItems.find(m => m.id === clip.mediaId);
+            if (!media || !media.audioBuffer) continue;
+
+            const clipEnd = clip.startTime + clip.duration;
+            if (currentTime >= clip.startTime && currentTime < clipEnd - 0.02) {
+              shouldPlayIds.add(clip.id);
+
+              const localTime = currentTime - clip.startTime;
+              const gainVal = this.computeClipGainAt(clip, localTime);
+
+              if (!this.activeNodes.has(clip.id)) {
+                const source = this.ctx.createBufferSource();
+                source.buffer = media.audioBuffer;
+                const gainNode = this.ctx.createGain();
+                gainNode.gain.setValueAtTime(gainVal, now);
+
+                source.connect(gainNode);
+                gainNode.connect(dest);
+
+                const offset = clamp(clip.inPoint + localTime, 0, Math.max(0, media.audioBuffer.duration - 0.01));
+                const remaining = clipEnd - currentTime;
+                source.start(0, offset, remaining);
+
+                this.activeNodes.set(clip.id, { source, gain: gainNode });
+              } else {
+                const nodeObj = this.activeNodes.get(clip.id);
+                nodeObj.gain.gain.setTargetAtTime(gainVal, now, 0.02);
+              }
+            }
+          }
+
+          // Stopper les clips sortis de la fenêtre
+          for (const [clipId, nodeObj] of this.activeNodes) {
+            if (!shouldPlayIds.has(clipId)) {
+              try {
+                nodeObj.source.stop();
+                nodeObj.source.disconnect();
+                nodeObj.gain.disconnect();
+              } catch (_) {}
+              this.activeNodes.delete(clipId);
+            }
+          }
+        }
+
+        computeClipGainAt(clip, localTime) {
+          let vol = (clip.volume ?? 100) / 100;
+          if (clip.fadeIn > 0 && localTime < clip.fadeIn) {
+            vol *= clamp(localTime / clip.fadeIn, 0, 1);
+          }
+          const timeFromEnd = clip.duration - localTime;
+          if (clip.fadeOut > 0 && timeFromEnd < clip.fadeOut) {
+            vol *= clamp(timeFromEnd / clip.fadeOut, 0, 1);
+          }
+          return Math.max(0, vol);
+        }
+
+        async decodeAudioFromBlob(blob) {
+          this.ensureContext();
+          try {
+            const arrayBuffer = await blob.arrayBuffer();
+            const audioBuffer = await this.ctx.decodeAudioData(arrayBuffer);
+            return audioBuffer;
+          } catch (err) {
+            console.warn("Aucune piste audio décodable dans ce fichier :", err);
+            return null;
+          }
+        }
+
+        computeWaveformPeaks(audioBuffer, numSamples = 120) {
+          if (!audioBuffer) return [];
+          const channelData = audioBuffer.getChannelData(0);
+          const blockSize = Math.max(1, Math.floor(channelData.length / numSamples));
+          const peaks = [];
+          for (let i = 0; i < numSamples; i++) {
+            let max = 0;
+            const start = i * blockSize;
+            const end = Math.min(channelData.length, start + blockSize);
+            for (let j = start; j < end; j += 4) {
+              const abs = Math.abs(channelData[j]);
+              if (abs > max) max = abs;
+            }
+            peaks.push(max);
+          }
+          return peaks;
+        }
+
+        /* Exportation Audio WAV 16-bit PCM pur via OfflineAudioContext */
+        async renderProjectToWavBlob(totalDuration) {
+          const sampleRate = 44100;
+          const duration = Math.max(1, totalDuration);
+          const totalFrames = Math.ceil(duration * sampleRate);
+          const offlineCtx = new OfflineAudioContext(2, totalFrames, sampleRate);
+
+          const masterGain = offlineCtx.createGain();
+          masterGain.gain.value = state.masterVolume;
+          masterGain.connect(offlineCtx.destination);
+
+          for (const clip of state.clips) {
+            const track = state.tracks.find(t => t.id === clip.trackId);
+            if (!track || track.muted || clip.muted) continue;
+
+            const media = state.mediaItems.find(m => m.id === clip.mediaId);
+            if (!media || !media.audioBuffer) continue;
+
+            const src = offlineCtx.createBufferSource();
+            src.buffer = media.audioBuffer;
+
+            const gainNode = offlineCtx.createGain();
+            const baseVol = (clip.volume ?? 100) / 100;
+            const startT = clip.startTime;
+            const endT = clip.startTime + clip.duration;
+
+            gainNode.gain.setValueAtTime(clip.fadeIn > 0 ? 0 : baseVol, startT);
+            if (clip.fadeIn > 0) {
+              const fadeInEnd = Math.min(endT, startT + clip.fadeIn);
+              gainNode.gain.linearRampToValueAtTime(baseVol, fadeInEnd);
+            }
+            if (clip.fadeOut > 0) {
+              const fadeOutStart = Math.max(startT, endT - clip.fadeOut);
+              gainNode.gain.setValueAtTime(baseVol, fadeOutStart);
+              gainNode.gain.linearRampToValueAtTime(0, endT);
+            }
+
+            src.connect(gainNode);
+            gainNode.connect(masterGain);
+
+            const offset = clamp(clip.inPoint, 0, Math.max(0, media.audioBuffer.duration - 0.01));
+            src.start(startT, offset, clip.duration);
+          }
+
+          const renderedBuffer = await offlineCtx.startRendering();
+          return audioBufferToWavBlob(renderedBuffer);
+        }
+      }
+
+      /* Encodeur WAV RIFF PCM 16-bit stéréo */
+      function audioBufferToWavBlob(buffer) {
+        const numChannels = buffer.numberOfChannels;
+        const sampleRate = buffer.sampleRate;
+        const format = 1; // PCM
+        const bitDepth = 16;
+
+        const samples = buffer.length;
+        const blockAlign = (numChannels * bitDepth) / 8;
+        const byteRate = sampleRate * blockAlign;
+        const dataSize = samples * blockAlign;
+        const bufferSize = 44 + dataSize;
+
+        const arrayBuffer = new ArrayBuffer(bufferSize);
+        const view = new DataView(arrayBuffer);
+
+        function writeString(offset, str) {
+          for (let i = 0; i < str.length; i++) {
+            view.setUint8(offset + i, str.charCodeAt(i));
+          }
+        }
+
+        writeString(0, "RIFF");
+        view.setUint32(4, 36 + dataSize, true);
+        writeString(8, "WAVE");
+        writeString(12, "fmt ");
+        view.setUint32(16, 16, true);
+        view.setUint16(20, format, true);
+        view.setUint16(22, numChannels, true);
+        view.setUint32(24, sampleRate, true);
+        view.setUint32(28, byteRate, true);
+        view.setUint16(32, blockAlign, true);
+        view.setUint16(34, bitDepth, true);
+        writeString(36, "data");
+        view.setUint32(40, dataSize, true);
+
+        const channels = [];
+        for (let c = 0; c < numChannels; c++) {
+          channels.push(buffer.getChannelData(c));
+        }
+
+        let offset = 44;
+        for (let i = 0; i < samples; i++) {
+          for (let c = 0; c < numChannels; c++) {
+            let sample = clamp(channels[c][i], -1, 1);
+            sample = sample < 0 ? sample * 0x8000 : sample * 0x7fff;
+            view.setInt16(offset, sample, true);
+            offset += 2;
+          }
+        }
+
+        return new Blob([arrayBuffer], { type: "audio/wav" });
+      }
+
+      const audioEngine = new AudioEngine();
+
+      /* -----------------------------------------------------------------------
+         4. IMPORTATION DE MÉDIAS & GÉNÉRATEUR DE MÉDIAS DE DÉMO
+         ----------------------------------------------------------------------- */
+      async function importFiles(fileList) {
+        const files = Array.from(fileList);
+        if (!files.length) return;
+
+        for (const file of files) {
+          const url = URL.createObjectURL(file);
+          const mime = file.type || "";
+
+          if (mime.startsWith("image/")) {
+            const img = await loadImage(url);
+            const mediaItem = {
+              id: uid("media"),
+              name: file.name,
+              type: "image",
+              duration: 5.0,
+              element: img,
+              thumbUrl: url,
+              audioBuffer: null,
+              peaks: []
+            };
+            state.mediaItems.push(mediaItem);
+            addClipFromMedia(mediaItem);
+          } else if (mime.startsWith("video/")) {
+            const video = await loadVideo(url);
+            const thumbUrl = captureVideoThumbnail(video);
+            const audioBuffer = await audioEngine.decodeAudioFromBlob(file);
+            const peaks = audioEngine.computeWaveformPeaks(audioBuffer, 140);
+            const mediaItem = {
+              id: uid("media"),
+              name: file.name,
+              type: "video",
+              duration: Math.max(0.5, video.duration || 5.0),
+              element: video,
+              thumbUrl,
+              audioBuffer,
+              peaks
+            };
+            state.mediaItems.push(mediaItem);
+            addClipFromMedia(mediaItem);
+          } else if (mime.startsWith("audio/")) {
+            const audioBuffer = await audioEngine.decodeAudioFromBlob(file);
+            if (!audioBuffer) {
+              showToast(`Impossible de décoder le fichier audio : ${file.name}`, "var(--accent-red)");
+              continue;
+            }
+            const peaks = audioEngine.computeWaveformPeaks(audioBuffer, 160);
+            const mediaItem = {
+              id: uid("media"),
+              name: file.name,
+              type: "audio",
+              duration: Math.max(0.5, audioBuffer.duration),
+              element: null,
+              thumbUrl: null,
+              audioBuffer,
+              peaks
+            };
+            state.mediaItems.push(mediaItem);
+            addClipFromMedia(mediaItem);
+          } else {
+            showToast(`Format non supporté : ${file.name}`, "var(--accent-amber)");
+          }
+        }
+
+        renderMediaLibrary();
+        renderTimeline();
+        renderPreviewFrame();
+      }
+
+      function loadImage(url) {
+        return new Promise((resolve, reject) => {
+          const img = new Image();
+          img.onload = () => resolve(img);
+          img.onerror = reject;
+          img.src = url;
+        });
+      }
+
+      function loadVideo(url) {
+        return new Promise((resolve, reject) => {
+          const video = document.createElement("video");
+          video.preload = "auto";
+          video.muted = true; // Le son est géré proprement via Web Audio API
+          video.playsInline = true;
+          video.crossOrigin = "anonymous";
+
+          let settled = false;
+          const finish = () => {
+            if (!settled) {
+              settled = true;
+              resolve(video);
+            }
+          };
+
+          video.onloadedmetadata = () => {
+            const target = Math.min(0.05, Math.max(0, (video.duration || 0.2) * 0.02));
+            video.currentTime = target;
+          };
+          video.onseeked = finish;
+          video.onloadeddata = finish;
+          video.onerror = () => {
+            if (!settled) {
+              settled = true;
+              reject(new Error("Impossible de charger la vidéo"));
+            }
+          };
+          video.src = url;
+          video.load();
+        });
+      }
+
+      function captureVideoThumbnail(video) {
+        const c = document.createElement("canvas");
+        c.width = 240;
+        c.height = 135;
+        const ctx = c.getContext("2d");
+        try {
+          ctx.drawImage(video, 0, 0, c.width, c.height);
+          return c.toDataURL("image/jpeg", 0.75);
+        } catch (_) {
+          return null;
+        }
+      }
+
+      /* Attend qu'un élément <video> ait terminé son seek pour éviter les images figées */
+      function waitForVideoSeek(video, targetTime, timeoutMs = 120) {
+        return new Promise(resolve => {
+          if (!video || video.readyState < 1) {
+            resolve();
+            return;
+          }
+          const maxDur = Number.isFinite(video.duration) && video.duration > 0
+            ? Math.max(0, video.duration - 0.01)
+            : targetTime;
+          const clampedTime = clamp(targetTime, 0, maxDur);
+
+          if (Math.abs(video.currentTime - clampedTime) <= 0.025 && video.readyState >= 2) {
+            resolve();
+            return;
+          }
+
+          let done = false;
+          const cleanup = () => {
+            if (done) return;
+            done = true;
+            clearTimeout(timer);
+            video.removeEventListener("seeked", onSeeked);
+            resolve();
+          };
+
+          const onSeeked = () => {
+            if (typeof video.requestVideoFrameCallback === "function") {
+              video.requestVideoFrameCallback(() => cleanup());
+            } else {
+              cleanup();
+            }
+          };
+
+          const timer = setTimeout(cleanup, timeoutMs);
+          video.addEventListener("seeked", onSeeked, { once: true });
+
+          try {
+            video.currentTime = clampedTime;
+          } catch (_) {
+            cleanup();
+          }
+        });
+      }
+
+      /* Synchronise l'état de lecture des <video> actifs sans bloquer le décodage */
+      function syncActiveVideosPlayback(currentTime, isPlaying) {
+        const activeVideoIds = new Set();
+
+        for (const track of state.tracks) {
+          if (track.type !== "video" || track.muted) continue;
+          const clip = state.clips.find(
+            c =>
+              c.type === "video" &&
+              c.trackId === track.id &&
+              currentTime >= c.startTime &&
+              currentTime < c.startTime + c.duration
+          );
+          if (!clip) continue;
+          const media = state.mediaItems.find(m => m.id === clip.mediaId);
+          const video = media ? media.element : null;
+          if (!video) continue;
+
+          activeVideoIds.add(video);
+
+          const expectedLocalTime = clamp(
+            clip.inPoint + (currentTime - clip.startTime),
+            0,
+            Math.max(0, (video.duration || clip.duration) - 0.02)
+          );
+
+          if (isPlaying) {
+            // Pendant la lecture continue, on laisse le décodeur matériel avancer naturellement
+            // et on ne force un seek que si le décalage dépasse 0.14s.
+            const drift = Math.abs(video.currentTime - expectedLocalTime);
+            if (drift > 0.14) {
+              try {
+                video.currentTime = expectedLocalTime;
+              } catch (_) {}
+            }
+            if (video.paused && video.readyState >= 2) {
+              const p = video.play();
+              if (p && typeof p.catch === "function") p.catch(() => {});
+            }
+          } else {
+            if (!video.paused) {
+              try {
+                video.pause();
+              } catch (_) {}
+            }
+            if (Math.abs(video.currentTime - expectedLocalTime) > 0.02) {
+              try {
+                video.currentTime = expectedLocalTime;
+              } catch (_) {}
+            }
+          }
+        }
+
+        // Mettre en pause les vidéos inactives
+        for (const media of state.mediaItems) {
+          if (media.type === "video" && media.element && !activeVideoIds.has(media.element)) {
+            if (!media.element.paused) {
+              try {
+                media.element.pause();
+              } catch (_) {}
+            }
+          }
+        }
+      }
+      /* Génère un visuel animé procédural + une musique synthétisée pour tester immédiatement */
+      async function createDemoAssets() {
+        audioEngine.ensureContext();
+        const sampleRate = 44100;
+        const duration = 6.0;
+        const length = sampleRate * duration;
+        const buffer = audioEngine.ctx.createBuffer(2, length, sampleRate);
+
+        const notes = [261.63, 329.63, 392.00, 493.88];
+        for (let ch = 0; ch < 2; ch++) {
+          const data = buffer.getChannelData(ch);
+          for (let i = 0; i < length; i++) {
+            const t = i / sampleRate;
+            const beat = Math.floor(t * 2);
+            const env = Math.exp(-((t * 2) % 1) * 2.2);
+            let sample = 0;
+            notes.forEach((freq, idx) => {
+              const detune = ch === 0 ? 1 : 1.003;
+              const f = freq * detune * (beat % 4 === 3 && idx === 0 ? 0.75 : 1);
+              sample += Math.sin(2 * Math.PI * f * t) * 0.11 * env;
+            });
+            sample += Math.sin(2 * Math.PI * 65.41 * t) * 0.16 * (0.6 + 0.4 * Math.sin(2 * Math.PI * 2 * t));
+            data[i] = clamp(sample, -0.9, 0.9);
+          }
+        }
+
+        const audioMedia = {
+          id: uid("media"),
+          name: "Ecoya_Ambiance_Demo.wav",
+          type: "audio",
+          duration,
+          element: null,
+          thumbUrl: null,
+          audioBuffer: buffer,
+          peaks: audioEngine.computeWaveformPeaks(buffer, 140)
+        };
+
+        const c = document.createElement("canvas");
+        c.width = 1280;
+        c.height = 720;
+        const ctx = c.getContext("2d");
+
+        const grad = ctx.createLinearGradient(0, 0, 1280, 720);
+        grad.addColorStop(0, "#071a1f");
+        grad.addColorStop(0.55, "#0b3b52");
+        grad.addColorStop(1, "#059669");
+        ctx.fillStyle = grad;
+        ctx.fillRect(0, 0, 1280, 720);
+
+        ctx.fillStyle = "rgba(0, 210, 255, 0.12)";
+        ctx.beginPath();
+        ctx.arc(960, 220, 210, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.fillStyle = "rgba(16, 185, 129, 0.22)";
+        ctx.beginPath();
+        ctx.arc(340, 500, 160, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.fillStyle = "#ffffff";
+        ctx.font = "bold 62px Segoe UI, sans-serif";
+        ctx.textAlign = "center";
+        ctx.fillText("ECOYA STUDIO", 640, 340);
+
+        ctx.fillStyle = "#a7f3d0";
+        ctx.font = "28px Segoe UI, sans-serif";
+        ctx.fillText("Color grading, timeline & MP4 / WAV export", 640, 398);
+
+        const dataUrl = c.toDataURL("image/png");
+        const img = await loadImage(dataUrl);
+
+        const imageMedia = {
+          id: uid("media"),
+          name: "Ecoya_Scene_HD.png",
+          type: "image",
+          duration: 6.0,
+          element: img,
+          thumbUrl: dataUrl,
+          audioBuffer: null,
+          peaks: []
+        };
+
+        state.mediaItems.push(imageMedia, audioMedia);
+        addClipFromMedia(imageMedia, "track_v1", 0);
+        addClipFromMedia(audioMedia, "track_a1", 0);
+
+        renderMediaLibrary();
+        renderTimeline();
+        renderPreviewFrame();
+        showToast(t("toastDemoOk"));
+      }
+
+      /* -----------------------------------------------------------------------
+         5. GESTION DES CLIPS, SÉLECTION, DÉCOUPAGE, ROGNAGE & DÉPLACEMENT
+         ----------------------------------------------------------------------- */
+      function getSelectedClip() {
+        return state.clips.find(c => c.id === state.selectedClipId) || null;
+      }
+
+      function selectClip(clipId) {
+        state.selectedClipId = clipId;
+        const clip = getSelectedClip();
+        if (clip && (clip.type === "video" || clip.type === "image")) {
+          state.gradeTargetMode = "clip";
+        }
+        updateInspectorUI();
+        renderTimeline();
+      }
+
+      function getProjectDuration() {
+        if (!state.clips.length) return 0;
+        let maxEnd = 0;
+        for (const c of state.clips) {
+          const end = c.startTime + c.duration;
+          if (end > maxEnd) maxEnd = end;
+        }
+        return maxEnd;
+      }
+
+      function addClipFromMedia(media, preferredTrackId = null, startTime = null) {
+        let track = null;
+        if (preferredTrackId) {
+          track = state.tracks.find(t => t.id === preferredTrackId);
+        }
+        if (!track) {
+          const desiredType = media.type === "audio" ? "audio" : "video";
+          track = state.tracks.find(t => t.type === desiredType);
+          if (!track) {
+            track = {
+              id: uid(desiredType === "audio" ? "track_a" : "track_v"),
+              name: desiredType === "audio" ? "Audio" : "Vidéo",
+              type: desiredType,
+              muted: false
+            };
+            if (desiredType === "audio") state.tracks.push(track);
+            else state.tracks.unshift(track);
+          }
+        }
+
+        let insertStart = startTime;
+        if (insertStart === null) {
+          const sameTrackClips = state.clips.filter(c => c.trackId === track.id);
+          insertStart = sameTrackClips.reduce((acc, c) => Math.max(acc, c.startTime + c.duration), 0);
+        }
+
+        const clip = {
+          id: uid("clip"),
+          mediaId: media.id,
+          trackId: track.id,
+          name: media.name,
+          type: media.type,
+          startTime: Math.max(0, insertStart),
+          duration: Math.max(MIN_CLIP_DURATION, media.duration),
+          inPoint: 0,
+          volume: 100,
+          fadeIn: 0,
+          fadeOut: 0,
+          muted: false,
+          grade: defaultColorGrade()
+        };
+
+        state.clips.push(clip);
+        selectClip(clip.id);
+        renderTimeline();
+        renderPreviewFrame();
+      }
+
+      function splitClipAtTime(clipId, splitTime) {
+        const clip = state.clips.find(c => c.id === clipId);
+        if (!clip) return false;
+
+        const clipStart = clip.startTime;
+        const clipEnd = clip.startTime + clip.duration;
+        if (splitTime <= clipStart + MIN_CLIP_DURATION || splitTime >= clipEnd - MIN_CLIP_DURATION) {
+          return false;
+        }
+
+        const firstDuration = splitTime - clipStart;
+        const secondDuration = clipEnd - splitTime;
+
+        const secondClip = {
+          ...clip,
+          id: uid("clip"),
+          startTime: splitTime,
+          duration: secondDuration,
+          inPoint: clip.inPoint + firstDuration,
+          grade: { ...clip.grade }
+        };
+
+        clip.duration = firstDuration;
+        state.clips.push(secondClip);
+        selectClip(secondClip.id);
+        renderTimeline();
+        renderPreviewFrame();
+        return true;
+      }
+
+      function deleteSelectedClip() {
+        const clip = getSelectedClip();
+        if (!clip) {
+          return;
+        }
+        state.clips = state.clips.filter(c => c.id !== clip.id);
+        state.selectedClipId = null;
+        audioEngine.stopAll();
+        syncActiveVideosPlayback(state.currentTime, false);
+        updateInspectorUI();
+        renderTimeline();
+        renderPreviewFrame();
+        showToast(t("toastDeletedOk"));
+      }
+
+      function duplicateSelectedClip() {
+        const clip = getSelectedClip();
+        if (!clip) {
+          return;
+        }
+        const clone = {
+          ...clip,
+          id: uid("clip"),
+          startTime: clip.startTime + clip.duration,
+          grade: { ...clip.grade }
+        };
+        state.clips.push(clone);
+        selectClip(clone.id);
+        renderTimeline();
+        renderPreviewFrame();
+        showToast(t("toastDuplicatedOk"));
+      }
+
+      function startClipMoveDrag(e, clip) {
+        const startX = e.clientX;
+        const startY = e.clientY;
+        const origStartTime = clip.startTime;
+        const origTrackId = clip.trackId;
+        const laneEls = Array.from(document.querySelectorAll(".track-lane"));
+
+        function onMove(moveEvent) {
+          const dx = moveEvent.clientX - startX;
+          const dt = dx / state.pixelsPerSecond;
+          clip.startTime = Math.max(0, origStartTime + dt);
+
+          for (const lane of laneEls) {
+            const rect = lane.getBoundingClientRect();
+            if (moveEvent.clientY >= rect.top && moveEvent.clientY <= rect.bottom) {
+              const candidateTrack = state.tracks.find(t => t.id === lane.dataset.trackId);
+              if (candidateTrack) {
+                const isAudioClip = clip.type === "audio";
+                if ((isAudioClip && candidateTrack.type === "audio") || (!isAudioClip && candidateTrack.type === "video")) {
+                  clip.trackId = candidateTrack.id;
+                }
+              }
+              break;
+            }
+          }
+          renderTimeline();
+          renderPreviewFrame();
+        }
+
+        function onUp() {
+          window.removeEventListener("mousemove", onMove);
+          window.removeEventListener("mouseup", onUp);
+          if (clip.startTime !== origStartTime || clip.trackId !== origTrackId) {
+            renderTimeline();
+            renderPreviewFrame();
+          }
+        }
+
+        window.addEventListener("mousemove", onMove);
+        window.addEventListener("mouseup", onUp);
+      }
+
+      function startTrimDrag(e, clip, edge) {
+        const startX = e.clientX;
+        const origStart = clip.startTime;
+        const origDur = clip.duration;
+        const origIn = clip.inPoint;
+        const media = state.mediaItems.find(m => m.id === clip.mediaId);
+        const maxMediaDur = media ? media.duration : Infinity;
+
+        function onMove(moveEvent) {
+          const dx = moveEvent.clientX - startX;
+          const dt = dx / state.pixelsPerSecond;
+
+          if (edge === "right") {
+            const maxAllowed = clip.type === "image" ? Infinity : Math.max(MIN_CLIP_DURATION, maxMediaDur - clip.inPoint);
+            clip.duration = clamp(origDur + dt, MIN_CLIP_DURATION, maxAllowed);
+          } else {
+            const maxShiftLeft = origDur - MIN_CLIP_DURATION;
+            const minShiftLeft = clip.type === "image" ? -origStart : Math.max(-origStart, -origIn);
+            const delta = clamp(dt, minShiftLeft, maxShiftLeft);
+            clip.startTime = origStart + delta;
+            clip.duration = origDur - delta;
+            if (clip.type !== "image") {
+              clip.inPoint = Math.max(0, origIn + delta);
+            }
+          }
+          renderTimeline();
+          renderPreviewFrame();
+        }
+
+        function onUp() {
+          window.removeEventListener("mousemove", onMove);
+          window.removeEventListener("mouseup", onUp);
+          renderTimeline();
+          renderPreviewFrame();
+        }
+
+        window.addEventListener("mousemove", onMove);
+        window.addEventListener("mouseup", onUp);
+      }
+
+      /* -----------------------------------------------------------------------
+         6. MOTEUR DE RENDU CANVAS & ÉTALONNAGE COULEUR (CLIP + SCÈNE)
+         ----------------------------------------------------------------------- */
+      const previewCanvas = document.getElementById("previewCanvas");
+      const previewCtx = previewCanvas.getContext("2d");
+      const sceneBufferCanvas = document.createElement("canvas");
+      sceneBufferCanvas.width = previewCanvas.width;
+      sceneBufferCanvas.height = previewCanvas.height;
+      const sceneBufferCtx = sceneBufferCanvas.getContext("2d");
+
+      function setCanvasAspect(aspect) {
+        state.aspectRatio = aspect;
+        if (aspect === "9:16") {
+          previewCanvas.width = 720;
+          previewCanvas.height = 1280;
+        } else if (aspect === "1:1") {
+          previewCanvas.width = 1080;
+          previewCanvas.height = 1080;
+        } else {
+          previewCanvas.width = 1280;
+          previewCanvas.height = 720;
+        }
+        sceneBufferCanvas.width = previewCanvas.width;
+        sceneBufferCanvas.height = previewCanvas.height;
+        updateCanvasStageFit();
+        renderPreviewFrame();
+      }
+
+      function updateCanvasStageFit() {
+        const stage = document.getElementById("canvasStage");
+        if (!stage) return;
+        const pad = 28;
+        const availW = Math.max(120, stage.clientWidth - pad);
+        const availH = Math.max(120, stage.clientHeight - pad);
+        const ratio = previewCanvas.width / previewCanvas.height;
+
+        let displayW = availW;
+        let displayH = displayW / ratio;
+        if (displayH > availH) {
+          displayH = availH;
+          displayW = displayH * ratio;
+        }
+        previewCanvas.style.width = `${Math.floor(displayW)}px`;
+        previewCanvas.style.height = `${Math.floor(displayH)}px`;
+      }
+
+      window.addEventListener("resize", updateCanvasStageFit);
+
+      function buildCssFilterString(grade) {
+        if (!grade) return "none";
+        const b = grade.brightness ?? 100;
+        const c = grade.contrast ?? 100;
+        const s = grade.saturation ?? 100;
+        const tempHueShift = ((grade.temperature ?? 0) / 100) * 18;
+        const totalHue = (grade.hue ?? 0) + tempHueShift;
+        const sepia = grade.sepia ?? 0;
+        const blur = grade.blur ?? 0;
+
+        return (
+          `brightness(${b}%) ` +
+          `contrast(${c}%) ` +
+          `saturate(${s}%) ` +
+          `hue-rotate(${totalHue}deg) ` +
+          `sepia(${sepia}%) ` +
+          `blur(${blur}px)`
+        );
+      }
+
+      function drawMediaCover(ctx, source, srcW, srcH, dstW, dstH) {
+        if (!srcW || !srcH) return;
+        const srcRatio = srcW / srcH;
+        const dstRatio = dstW / dstH;
+        let drawW = dstW;
+        let drawH = dstH;
+        let offsetX = 0;
+        let offsetY = 0;
+
+        if (srcRatio > dstRatio) {
+          drawH = dstH;
+          drawW = dstH * srcRatio;
+          offsetX = (dstW - drawW) / 2;
+        } else {
+          drawW = dstW;
+          drawH = dstW / srcRatio;
+          offsetY = (dstH - drawH) / 2;
+        }
+
+        ctx.drawImage(source, offsetX, offsetY, drawW, drawH);
+      }
+
+      function applyPostGradeOverlays(ctx, w, h, grade) {
+        if (!grade) return;
+
+        if (grade.tintAlpha > 0) {
+          ctx.save();
+          ctx.globalAlpha = clamp(grade.tintAlpha / 100, 0, 0.85);
+          ctx.fillStyle = grade.tintColor || "#ff6b00";
+          ctx.fillRect(0, 0, w, h);
+          ctx.restore();
+        }
+
+        if (grade.vignette > 0) {
+          const strength = clamp(grade.vignette / 100, 0, 1);
+          const cx = w / 2;
+          const cy = h / 2;
+          const outerR = Math.hypot(cx, cy);
+          const innerR = outerR * (1 - strength * 0.65);
+          const grad = ctx.createRadialGradient(cx, cy, innerR, cx, cy, outerR);
+          grad.addColorStop(0, "rgba(0,0,0,0)");
+          grad.addColorStop(1, `rgba(0,0,0,${strength * 0.82})`);
+          ctx.save();
+          ctx.fillStyle = grad;
+          ctx.fillRect(0, 0, w, h);
+          ctx.restore();
+        }
+      }
+
+      function renderPreviewFrame() {
+        const w = previewCanvas.width;
+        const h = previewCanvas.height;
+
+        // 1. Composer les pistes vidéo/images dans sceneBufferCanvas avec l'ÉTALONNAGE PAR CLIP
+        sceneBufferCtx.save();
+        sceneBufferCtx.clearRect(0, 0, w, h);
+
+        const videoTracksBottomToTop = [...state.tracks]
+          .filter(t => t.type === "video" && !t.muted)
+          .reverse();
+
+        let hasVisualAtPlayhead = false;
+
+        for (const track of videoTracksBottomToTop) {
+          const clip = state.clips.find(
+            c =>
+              c.trackId === track.id &&
+              (c.type === "video" || c.type === "image") &&
+              state.currentTime >= c.startTime &&
+              state.currentTime < c.startTime + c.duration
+          );
+          if (!clip) continue;
+
+          const media = state.mediaItems.find(m => m.id === clip.mediaId);
+          if (!media || !media.element) continue;
+
+          sceneBufferCtx.save();
+          sceneBufferCtx.filter = buildCssFilterString(clip.grade);
+          sceneBufferCtx.globalAlpha = clamp((clip.grade.opacity ?? 100) / 100, 0, 1);
+
+          if (media.type === "image") {
+            hasVisualAtPlayhead = true;
+            drawMediaCover(
+              sceneBufferCtx,
+              media.element,
+              media.element.naturalWidth || media.element.width || 1280,
+              media.element.naturalHeight || media.element.height || 720,
+              w,
+              h
+            );
+          } else if (media.type === "video") {
+            const video = media.element;
+            if (video.readyState >= 2) {
+              hasVisualAtPlayhead = true;
+              drawMediaCover(
+                sceneBufferCtx,
+                video,
+                video.videoWidth || 1280,
+                video.videoHeight || 720,
+                w,
+                h
+              );
+            }
+          }
+
+          sceneBufferCtx.filter = "none";
+          applyPostGradeOverlays(sceneBufferCtx, w, h, clip.grade);
+          sceneBufferCtx.restore();
+        }
+
+        // Écran d'accueil discret si aucune image/vidéo n'est sous la tête de lecture
+        if (!hasVisualAtPlayhead && state.clips.length === 0) {
+          sceneBufferCtx.fillStyle = "#11151c";
+          sceneBufferCtx.fillRect(0, 0, w, h);
+          sceneBufferCtx.fillStyle = "#94a3b8";
+          sceneBufferCtx.font = "600 24px Segoe UI, sans-serif";
+          sceneBufferCtx.textAlign = "center";
+          sceneBufferCtx.fillText("ECOYA STUDIO", w / 2, h / 2 - 12);
+          sceneBufferCtx.font = "16px Segoe UI, sans-serif";
+          sceneBufferCtx.fillStyle = "#64748b";
+          sceneBufferCtx.fillText(t("dropzoneSub"), w / 2, h / 2 + 22);
+        }
+
+        sceneBufferCtx.restore();
+
+        // 2. Copier vers previewCanvas en appliquant l'ÉTALONNAGE GLOBAL DE TOUTE LA SCÈNE
+        previewCtx.save();
+        previewCtx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue("--canvas-bg").trim() || "#000000";
+        previewCtx.fillRect(0, 0, w, h);
+        previewCtx.filter = buildCssFilterString(state.sceneGrade);
+        previewCtx.globalAlpha = clamp((state.sceneGrade.opacity ?? 100) / 100, 0, 1);
+        previewCtx.drawImage(sceneBufferCanvas, 0, 0, w, h);
+        previewCtx.filter = "none";
+        applyPostGradeOverlays(previewCtx, w, h, state.sceneGrade);
+        previewCtx.restore();
+
+        updateTimecodeDisplay();
+      }
+
+      function updateTimecodeDisplay() {
+        const total = getProjectDuration();
+        const el = document.getElementById("timecodeDisplay");
+        el.innerHTML = `${formatTimecode(state.currentTime)} <span class="total-tc">/ ${formatTimecode(total)}</span>`;
+      }
+
+      /* -----------------------------------------------------------------------
+         7. BOUCLE DE LECTURE TEMPS RÉEL (VIDÉO MP4 FLUIDE + WEB AUDIO)
+         ----------------------------------------------------------------------- */
+      function togglePlayPause() {
+        if (state.isPlaying) {
+          pausePlayback();
+        } else {
+          startPlayback();
+        }
+      }
+
+      function startPlayback() {
+        const total = getProjectDuration();
+        if (total <= 0) {
+          showToast(t("toastEmptyTimeline"), "var(--accent-amber)");
+          return;
+        }
+        if (state.currentTime >= total - 0.03) {
+          state.currentTime = 0;
+        }
+        audioEngine.ensureContext();
+        state.isPlaying = true;
+        state.lastFramePerf = performance.now();
+        document.getElementById("btnPlayPause").textContent = "⏸";
+        syncActiveVideosPlayback(state.currentTime, true);
+        requestAnimationFrame(playbackLoop);
+      }
+
+      function pausePlayback() {
+        state.isPlaying = false;
+        audioEngine.stopAll();
+        syncActiveVideosPlayback(state.currentTime, false);
+        document.getElementById("btnPlayPause").textContent = "▶";
+      }
+
+      function stopPlayback() {
+        pausePlayback();
+        seekTo(0);
+      }
+
+      async function seekTo(timeSec) {
+        const maxTime = Math.max(getProjectDuration() + 5, 30);
+        state.currentTime = clamp(timeSec, 0, maxTime);
+        updatePlayheadPosition();
+
+        // Attendre le décodage précis des vidéos actives lors d'un seek manuel
+        const seekPromises = [];
+        for (const track of state.tracks) {
+          if (track.type !== "video" || track.muted) continue;
+          const clip = state.clips.find(
+            c =>
+              c.type === "video" &&
+              c.trackId === track.id &&
+              state.currentTime >= c.startTime &&
+              state.currentTime < c.startTime + c.duration
+          );
+          if (clip) {
+            const media = state.mediaItems.find(m => m.id === clip.mediaId);
+            if (media && media.element) {
+              const targetLocal = clip.inPoint + (state.currentTime - clip.startTime);
+              seekPromises.push(waitForVideoSeek(media.element, targetLocal, 140));
+            }
+          }
+        }
+        if (seekPromises.length) {
+          await Promise.all(seekPromises);
+        }
+
+        renderPreviewFrame();
+        if (state.isPlaying) {
+          audioEngine.stopAll();
+          audioEngine.syncPlayback(state.currentTime);
+          syncActiveVideosPlayback(state.currentTime, true);
+        }
+      }
+
+      function playbackLoop(nowPerf) {
+        if (!state.isPlaying) return;
+        const dt = Math.min(0.1, (nowPerf - state.lastFramePerf) / 1000);
+        state.lastFramePerf = nowPerf;
+
+        state.currentTime += dt;
+        const total = getProjectDuration();
+
+        if (total > 0 && state.currentTime >= total) {
+          state.currentTime = total;
+          syncActiveVideosPlayback(state.currentTime, false);
+          updatePlayheadPosition();
+          renderPreviewFrame();
+          pausePlayback();
+          return;
+        }
+
+        audioEngine.syncPlayback(state.currentTime);
+        syncActiveVideosPlayback(state.currentTime, true);
+        updatePlayheadPosition();
+        renderPreviewFrame();
+        requestAnimationFrame(playbackLoop);
+      }
+
+      /* -----------------------------------------------------------------------
+         8. RENDU DE L'INTERFACE : BIBLIOTHÈQUE, INSPECTEUR & TIMELINE
+         ----------------------------------------------------------------------- */
+      function renderMediaLibrary() {
+        const list = document.getElementById("mediaList");
+        const dropzone = document.getElementById("mediaDropzone");
+        document.getElementById("mediaCountLabel").textContent =
+          `${state.mediaItems.length} ${t("filesLabel")}`;
+
+        list.innerHTML = "";
+        list.appendChild(dropzone);
+
+        for (const media of state.mediaItems) {
+          const card = document.createElement("div");
+          card.className = "media-card";
+          card.draggable = true;
+
+          card.addEventListener("dragstart", (e) => {
+            e.dataTransfer.setData("text/media-id", media.id);
+          });
+
+          const thumb = document.createElement("div");
+          thumb.className = "media-thumb";
+
+          if (media.thumbUrl) {
+            const img = document.createElement("img");
+            img.src = media.thumbUrl;
+            thumb.appendChild(img);
+          } else {
+            const c = document.createElement("canvas");
+            c.width = 160;
+            c.height = 68;
+            const ctx = c.getContext("2d");
+            ctx.fillStyle = "#062c22";
+            ctx.fillRect(0, 0, c.width, c.height);
+            ctx.fillStyle = "#34d399";
+            const peaks = media.peaks || [];
+            const barW = c.width / Math.max(1, peaks.length);
+            peaks.forEach((p, idx) => {
+              const barH = Math.max(3, p * 48);
+              ctx.fillRect(idx * barW, (c.height - barH) / 2, Math.max(1, barW - 1), barH);
+            });
+            thumb.appendChild(c);
+          }
+
+          const badge = document.createElement("span");
+          badge.className = `media-badge badge-${media.type}`;
+          badge.textContent = media.type;
+          thumb.appendChild(badge);
+
+          const dur = document.createElement("span");
+          dur.className = "media-duration";
+          dur.textContent = formatShortDuration(media.duration);
+          thumb.appendChild(dur);
+
+          const info = document.createElement("div");
+          info.className = "media-info";
+
+          const name = document.createElement("div");
+          name.className = "media-name";
+          name.textContent = media.name;
+          name.title = media.name;
+
+          const addBtn = document.createElement("button");
+          addBtn.className = "media-add-btn";
+          addBtn.textContent = "+";
+          addBtn.addEventListener("click", (e) => {
+            e.stopPropagation();
+            addClipFromMedia(media);
+          });
+
+          info.appendChild(name);
+          info.appendChild(addBtn);
+
+          card.appendChild(thumb);
+          card.appendChild(info);
+          list.appendChild(card);
+        }
+      }
+
+      function updateInspectorUI() {
+        const clip = getSelectedClip();
+        const mode = state.gradeTargetMode;
+
+        document.querySelectorAll(".grade-target-btn").forEach(btn => {
+          btn.classList.toggle("active", btn.dataset.mode === mode);
+        });
+
+        const banner = document.getElementById("gradeContextBanner");
+        const colorControls = document.getElementById("colorGradingControls");
+        const noClipNotice = document.getElementById("noClipSelectedNotice");
+        const audioCard = document.getElementById("audioInspectorCard");
+
+        const scenePill = document.getElementById("sceneGradeStatus");
+        if (isGradeModified(state.sceneGrade)) {
+          scenePill.textContent = t("sceneGradeActive");
+          scenePill.classList.add("grade-active");
+        } else {
+          scenePill.textContent = t("sceneGradeNeutral");
+          scenePill.classList.remove("grade-active");
+        }
+
+        let activeGrade = null;
+
+        if (mode === "scene") {
+          banner.style.background = "rgba(139, 92, 246, 0.16)";
+          banner.style.borderColor = "rgba(139, 92, 246, 0.45)";
+          banner.style.color = "var(--accent-purple)";
+          banner.textContent = t("modeSceneBanner");
+          colorControls.style.display = "flex";
+          noClipNotice.style.display = "none";
+          activeGrade = state.sceneGrade;
+        } else {
+          banner.style.background = "var(--accent-dim)";
+          banner.style.borderColor = "rgba(2, 132, 199, 0.35)";
+          banner.style.color = "var(--accent)";
+
+          if (clip && (clip.type === "video" || clip.type === "image")) {
+            banner.textContent = `${t("targetClip")} : ${clip.name}`;
+            colorControls.style.display = "flex";
+            noClipNotice.style.display = "none";
+            activeGrade = clip.grade;
+          } else {
+            banner.textContent = t("noClipVisualBanner");
+            colorControls.style.display = "none";
+            noClipNotice.style.display = "block";
+          }
+        }
+
+        if (activeGrade) {
+          document.getElementById("ctrlBrightness").value = activeGrade.brightness;
+          document.getElementById("valBrightness").textContent = `${activeGrade.brightness}%`;
+
+          document.getElementById("ctrlContrast").value = activeGrade.contrast;
+          document.getElementById("valContrast").textContent = `${activeGrade.contrast}%`;
+
+          document.getElementById("ctrlSaturation").value = activeGrade.saturation;
+          document.getElementById("valSaturation").textContent = `${activeGrade.saturation}%`;
+
+          document.getElementById("ctrlTemperature").value = activeGrade.temperature;
+          document.getElementById("valTemperature").textContent = activeGrade.temperature;
+
+          document.getElementById("ctrlHue").value = activeGrade.hue;
+          document.getElementById("valHue").textContent = `${activeGrade.hue}°`;
+
+          document.getElementById("ctrlSepia").value = activeGrade.sepia;
+          document.getElementById("valSepia").textContent = `${activeGrade.sepia}%`;
+
+          document.getElementById("ctrlBlur").value = activeGrade.blur;
+          document.getElementById("valBlur").textContent = `${activeGrade.blur} px`;
+
+          document.getElementById("ctrlVignette").value = activeGrade.vignette;
+          document.getElementById("valVignette").textContent = `${activeGrade.vignette}%`;
+
+          document.getElementById("ctrlOpacity").value = activeGrade.opacity;
+          document.getElementById("valOpacity").textContent = `${activeGrade.opacity}%`;
+
+          document.getElementById("ctrlTintColor").value = activeGrade.tintColor;
+          document.getElementById("ctrlTintAlpha").value = activeGrade.tintAlpha;
+          document.getElementById("valTintAlpha").textContent = `${activeGrade.tintAlpha}%`;
+        }
+
+        if (clip) {
+          const media = state.mediaItems.find(m => m.id === clip.mediaId);
+          if (media && media.audioBuffer) {
+            audioCard.style.display = "flex";
+            document.getElementById("ctrlClipVolume").value = clip.volume ?? 100;
+            document.getElementById("valClipVolume").textContent = `${clip.volume ?? 100}%`;
+
+            document.getElementById("ctrlClipFadeIn").value = clip.fadeIn ?? 0;
+            document.getElementById("valClipFadeIn").textContent = `${(clip.fadeIn ?? 0).toFixed(1)} s`;
+
+            document.getElementById("ctrlClipFadeOut").value = clip.fadeOut ?? 0;
+            document.getElementById("valClipFadeOut").textContent = `${(clip.fadeOut ?? 0).toFixed(1)} s`;
+
+            const muteBtn = document.getElementById("btnClipMute");
+            muteBtn.classList.toggle("active", Boolean(clip.muted));
+            muteBtn.textContent = clip.muted ? t("mutedBtn") : t("muteBtn");
+          } else {
+            audioCard.style.display = "none";
+          }
+        } else {
+          audioCard.style.display = "none";
+        }
+      }
+
+      function getTargetGradeObject() {
+        if (state.gradeTargetMode === "scene") {
+          return state.sceneGrade;
+        }
+        const clip = getSelectedClip();
+        if (clip && (clip.type === "video" || clip.type === "image")) {
+          return clip.grade;
+        }
+        return null;
+      }
+
+      function renderTimeline() {
+        const headerList = document.getElementById("trackHeaderList");
+        const tracksLanes = document.getElementById("tracksLanes");
+        const contentInner = document.getElementById("timelineContentInner");
+
+        const totalDuration = Math.max(getProjectDuration() + 15, 45);
+        const totalWidthPx = Math.ceil(totalDuration * state.pixelsPerSecond);
+        contentInner.style.width = `${totalWidthPx}px`;
+
+        drawTimeRuler(totalWidthPx, totalDuration);
+
+        headerList.innerHTML = "";
+        tracksLanes.innerHTML = "";
+
+        for (const track of state.tracks) {
+          const hItem = document.createElement("div");
+          hItem.className = "track-header-item";
+
+          const titleRow = document.createElement("div");
+          titleRow.className = "track-title-row";
+
+          const nameSpan = document.createElement("span");
+          nameSpan.textContent = track.name;
+          nameSpan.style.overflow = "hidden";
+          nameSpan.style.textOverflow = "ellipsis";
+          nameSpan.style.whiteSpace = "nowrap";
+
+          const tag = document.createElement("span");
+          tag.className = `track-tag ${track.type}`;
+          tag.textContent = track.type === "video" ? "VID" : "AUD";
+
+          titleRow.appendChild(nameSpan);
+          titleRow.appendChild(tag);
+
+          const ctrlRow = document.createElement("div");
+          ctrlRow.className = "track-controls-row";
+
+          const muteBtn = document.createElement("button");
+          muteBtn.className = `mini-toggle ${track.muted ? "active" : ""}`;
+          muteBtn.textContent = track.muted ? t("mutedBtn") : t("muteBtn");
+          muteBtn.addEventListener("click", () => {
+            track.muted = !track.muted;
+            audioEngine.stopAll();
+            syncActiveVideosPlayback(state.currentTime, state.isPlaying);
+            renderTimeline();
+            renderPreviewFrame();
+          });
+
+          ctrlRow.appendChild(muteBtn);
+          hItem.appendChild(titleRow);
+          hItem.appendChild(ctrlRow);
+          headerList.appendChild(hItem);
+
+          const lane = document.createElement("div");
+          lane.className = "track-lane";
+          lane.dataset.trackId = track.id;
+          lane.style.backgroundSize = `${state.pixelsPerSecond}px 100%`;
+
+          lane.addEventListener("dragover", (e) => {
+            e.preventDefault();
+            lane.classList.add("drag-over");
+          });
+          lane.addEventListener("dragleave", () => lane.classList.remove("drag-over"));
+          lane.addEventListener("drop", (e) => {
+            e.preventDefault();
+            lane.classList.remove("drag-over");
+            const mediaId = e.dataTransfer.getData("text/media-id");
+            const media = state.mediaItems.find(m => m.id === mediaId);
+            if (!media) return;
+
+            const isAudio = media.type === "audio";
+            if ((isAudio && track.type !== "audio") || (!isAudio && track.type !== "video")) {
+              return;
+            }
+
+            const rect = lane.getBoundingClientRect();
+            const dropX = e.clientX - rect.left;
+            const dropTime = Math.max(0, dropX / state.pixelsPerSecond);
+            addClipFromMedia(media, track.id, dropTime);
+          });
+
+          lane.addEventListener("mousedown", (e) => {
+            if (e.target === lane) {
+              const rect = lane.getBoundingClientRect();
+              const clickTime = (e.clientX - rect.left) / state.pixelsPerSecond;
+              seekTo(clickTime);
+            }
+          });
+
+          const trackClips = state.clips.filter(c => c.trackId === track.id);
+          for (const clip of trackClips) {
+            const clipEl = createClipElement(clip);
+            lane.appendChild(clipEl);
+          }
+
+          tracksLanes.appendChild(lane);
+        }
+
+        updatePlayheadPosition();
+      }
+
+      function createClipElement(clip) {
+        const el = document.createElement("div");
+        el.className = `timeline-clip type-${clip.type}`;
+        if (clip.id === state.selectedClipId) el.classList.add("selected");
+        if (state.activeTool === "razor") el.classList.add("razor-mode");
+
+        const leftPx = clip.startTime * state.pixelsPerSecond;
+        const widthPx = Math.max(18, clip.duration * state.pixelsPerSecond);
+        el.style.left = `${leftPx}px`;
+        el.style.width = `${widthPx}px`;
+
+        const header = document.createElement("div");
+        header.className = "clip-header";
+
+        const titleSpan = document.createElement("span");
+        titleSpan.textContent = clip.name;
+        header.appendChild(titleSpan);
+
+        if (isGradeModified(clip.grade)) {
+          const dot = document.createElement("span");
+          dot.className = "clip-grade-dot";
+          header.appendChild(dot);
+        }
+
+        el.appendChild(header);
+
+        const media = state.mediaItems.find(m => m.id === clip.mediaId);
+        if (media && media.peaks && media.peaks.length > 0) {
+          const wfCanvas = document.createElement("canvas");
+          wfCanvas.className = "clip-waveform-canvas";
+          wfCanvas.width = Math.max(20, Math.floor(widthPx));
+          wfCanvas.height = 30;
+          drawClipWaveform(wfCanvas, media, clip);
+          el.appendChild(wfCanvas);
+        }
+
+        const trimLeft = document.createElement("div");
+        trimLeft.className = "trim-handle left";
+        const trimRight = document.createElement("div");
+        trimRight.className = "trim-handle right";
+        el.appendChild(trimLeft);
+        el.appendChild(trimRight);
+
+        trimLeft.addEventListener("mousedown", (e) => {
+          e.stopPropagation();
+          selectClip(clip.id);
+          startTrimDrag(e, clip, "left");
+        });
+
+        trimRight.addEventListener("mousedown", (e) => {
+          e.stopPropagation();
+          selectClip(clip.id);
+          startTrimDrag(e, clip, "right");
+        });
+
+        el.addEventListener("mousedown", (e) => {
+          e.stopPropagation();
+          selectClip(clip.id);
+
+          if (state.activeTool === "razor") {
+            const rect = el.getBoundingClientRect();
+            const offsetPx = e.clientX - rect.left;
+            const splitTime = clip.startTime + offsetPx / state.pixelsPerSecond;
+            splitClipAtTime(clip.id, splitTime);
+            return;
+          }
+
+          startClipMoveDrag(e, clip);
+        });
+
+        return el;
+      }
+
+      function drawClipWaveform(canvas, media, clip) {
+        const ctx = canvas.getContext("2d");
+        const w = canvas.width;
+        const h = canvas.height;
+        ctx.clearRect(0, 0, w, h);
+
+        const peaks = media.peaks;
+        if (!peaks.length) return;
+
+        const totalMediaDur = Math.max(0.1, media.duration);
+        const startRatio = clamp(clip.inPoint / totalMediaDur, 0, 1);
+        const endRatio = clamp((clip.inPoint + clip.duration) / totalMediaDur, 0, 1);
+
+        const startIdx = Math.floor(startRatio * peaks.length);
+        const endIdx = Math.max(startIdx + 1, Math.floor(endRatio * peaks.length));
+        const slice = peaks.slice(startIdx, endIdx);
+
+        ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue("--waveform-color").trim() || "rgba(255,255,255,0.78)";
+        const step = w / Math.max(1, slice.length);
+        for (let i = 0; i < slice.length; i++) {
+          const barH = Math.max(2, slice[i] * (h - 4));
+          ctx.fillRect(i * step, (h - barH) / 2, Math.max(1, step - 0.6), barH);
+        }
+      }
+      function drawTimeRuler(widthPx, totalDuration) {
+        const canvas = document.getElementById("rulerCanvas");
+        canvas.width = widthPx;
+        canvas.height = 28;
+        const ctx = canvas.getContext("2d");
+        const styles = getComputedStyle(document.documentElement);
+        const majorTick = styles.getPropertyValue("--ruler-tick-major").trim() || "#475569";
+        const minorTick = styles.getPropertyValue("--ruler-tick-minor").trim() || "#2a303c";
+        const textCol = styles.getPropertyValue("--ruler-text").trim() || "#94a3b8";
+
+        ctx.clearRect(0, 0, widthPx, 28);
+        ctx.fillStyle = textCol;
+        ctx.font = "10px Consolas, monospace";
+
+        const pps = state.pixelsPerSecond;
+        const stepSec = pps >= 120 ? 1 : pps >= 55 ? 2 : 5;
+
+        for (let s = 0; s <= totalDuration; s += stepSec) {
+          const x = Math.round(s * pps) + 0.5;
+          ctx.strokeStyle = majorTick;
+          ctx.beginPath();
+          ctx.moveTo(x, 14);
+          ctx.lineTo(x, 28);
+          ctx.stroke();
+
+          ctx.fillText(formatShortDuration(s), x + 4, 12);
+
+          const subCount = stepSec === 1 ? 4 : stepSec;
+          for (let sub = 1; sub < subCount; sub++) {
+            const subX = Math.round((s + (sub * stepSec) / subCount) * pps) + 0.5;
+            ctx.strokeStyle = minorTick;
+            ctx.beginPath();
+            ctx.moveTo(subX, 21);
+            ctx.lineTo(subX, 28);
+            ctx.stroke();
+          }
+        }
+      }
+
+      function updatePlayheadPosition() {
+        const playhead = document.getElementById("playhead");
+        playhead.style.left = `${state.currentTime * state.pixelsPerSecond}px`;
+      }
+
+      /* -----------------------------------------------------------------------
+         9. EXPORTATION VIDÉO MP4 / WEBM (FRAME-SAFE) & EXPORTATION AUDIO WAV
+         ----------------------------------------------------------------------- */
+      function getSupportedVideoMimeTypes() {
+        const candidates = [
+          { label: "MP4 (H.264 / AAC)", mime: "video/mp4;codecs=avc1,mp4a.40.2", ext: "mp4" },
+          { label: "MP4 (video/mp4)", mime: "video/mp4", ext: "mp4" },
+          { label: "WebM VP9 + Opus", mime: "video/webm;codecs=vp9,opus", ext: "webm" },
+          { label: "WebM VP8 + Vorbis", mime: "video/webm;codecs=vp8,vorbis", ext: "webm" },
+          { label: "WebM (video/webm)", mime: "video/webm", ext: "webm" }
+        ];
+        const supported = candidates.filter(c => typeof MediaRecorder !== "undefined" && MediaRecorder.isTypeSupported(c.mime));
+        return supported.length ? supported : [{ label: "WebM Default", mime: "", ext: "webm" }];
+      }
+
+      let currentExportMode = "video";
+
+      function openExportModal(mode) {
+        const total = getProjectDuration();
+        if (total <= 0) {
+          showToast(t("toastEmptyTimeline"), "var(--accent-amber)");
+          return;
+        }
+
+        pausePlayback();
+        currentExportMode = mode;
+
+        const modal = document.getElementById("exportModal");
+        const title = document.getElementById("exportModalTitle");
+        const desc = document.getElementById("exportModalDesc");
+        const videoGroup = document.getElementById("exportVideoOptionsGroup");
+        const progressSec = document.getElementById("exportProgressSection");
+
+        progressSec.style.display = "none";
+        document.getElementById("btnStartExport").disabled = false;
+
+        if (mode === "wav") {
+          title.textContent = t("exportWavModalTitle");
+          desc.textContent = `${formatShortDuration(total)} — 44.1 kHz Stereo PCM 16-bit WAV.`;
+          videoGroup.style.display = "none";
+        } else {
+          title.textContent = t("exportVideoModalTitle");
+          desc.textContent = `${previewCanvas.width}×${previewCanvas.height} @ ${FPS} FPS — ${formatShortDuration(total)}.`;
+          videoGroup.style.display = "flex";
+
+          const select = document.getElementById("exportFormatSelect");
+          select.innerHTML = "";
+          const formats = getSupportedVideoMimeTypes();
+          formats.forEach(fmt => {
+            const opt = document.createElement("option");
+            opt.value = JSON.stringify(fmt);
+            opt.textContent = fmt.label;
+            select.appendChild(opt);
+          });
+        }
+
+        modal.classList.add("open");
+      }
+
+      async function runExportProcess() {
+        const total = getProjectDuration();
+        const projectName = (document.getElementById("projectTitleInput").value.trim() || "Ecoya_Export")
+          .replace(/[^a-zA-Z0-9_\-]/g, "_");
+
+        const progressSec = document.getElementById("exportProgressSection");
+        const progressFill = document.getElementById("exportProgressFill");
+        const statusText = document.getElementById("exportStatusText");
+        const percentText = document.getElementById("exportPercentText");
+        const startBtn = document.getElementById("btnStartExport");
+
+        startBtn.disabled = true;
+        progressSec.style.display = "flex";
+
+        if (currentExportMode === "wav") {
+          statusText.textContent = t("renderingInProgress");
+          progressFill.style.width = "45%";
+          percentText.textContent = "45%";
+
+          try {
+            const wavBlob = await audioEngine.renderProjectToWavBlob(total);
+            progressFill.style.width = "100%";
+            percentText.textContent = "100%";
+
+            triggerDownload(wavBlob, `${projectName}.wav`);
+            showToast(`${projectName}.wav`, "var(--accent-green)");
+            setTimeout(() => document.getElementById("exportModal").classList.remove("open"), 600);
+          } catch (err) {
+            console.error(err);
+            startBtn.disabled = false;
+          }
+          return;
+        }
+
+        // Exportation Vidéo : pas de seek agressif à chaque micro-tick qui fige les MP4
+        const formatObj = JSON.parse(document.getElementById("exportFormatSelect").value);
+        state.isExporting = true;
+        audioEngine.ensureContext();
+        audioEngine.stopAll();
+
+        const canvasStream = previewCanvas.captureStream(FPS);
+        const audioDest = audioEngine.ctx.createMediaStreamDestination();
+        const combinedTracks = [
+          ...canvasStream.getVideoTracks(),
+          ...audioDest.stream.getAudioTracks()
+        ];
+        const combinedStream = new MediaStream(combinedTracks);
+
+        const chunks = [];
+        const recorderOptions = formatObj.mime
+          ? { mimeType: formatObj.mime, videoBitsPerSecond: 8_000_000 }
+          : { videoBitsPerSecond: 8_000_000 };
+        const recorder = new MediaRecorder(combinedStream, recorderOptions);
+
+        recorder.ondataavailable = (e) => {
+          if (e.data && e.data.size > 0) chunks.push(e.data);
+        };
+
+        recorder.onstop = () => {
+          state.isExporting = false;
+          audioEngine.stopAll();
+          syncActiveVideosPlayback(state.currentTime, false);
+          const finalBlob = new Blob(chunks, { type: recorder.mimeType || formatObj.mime || "video/webm" });
+          triggerDownload(finalBlob, `${projectName}.${formatObj.ext}`);
+          showToast(`${projectName}.${formatObj.ext}`, "var(--accent-green)");
+          document.getElementById("exportModal").classList.remove("open");
+        };
+
+        state.currentTime = 0;
+        syncActiveVideosPlayback(0, true);
+        renderPreviewFrame();
+        recorder.start(150);
+
+        const exportStartPerf = performance.now();
+        statusText.textContent = t("renderingInProgress");
+
+        async function exportStep(nowPerf) {
+          if (!state.isExporting) return;
+          const elapsed = (nowPerf - exportStartPerf) / 1000;
+          state.currentTime = Math.min(elapsed, total);
+
+          const pct = Math.min(100, Math.round((state.currentTime / total) * 100));
+          progressFill.style.width = `${pct}%`;
+          percentText.textContent = `${pct}%`;
+
+          audioEngine.syncPlayback(state.currentTime, audioDest);
+          syncActiveVideosPlayback(state.currentTime, true);
+          updatePlayheadPosition();
+
+          // Attendre brièvement qu'une frame vidéo soit prête si une vidéo active est en cours de seek
+          for (const track of state.tracks) {
+            if (track.type !== "video" || track.muted) continue;
+            const clip = state.clips.find(
+              c =>
+                c.type === "video" &&
+                c.trackId === track.id &&
+                state.currentTime >= c.startTime &&
+                state.currentTime < c.startTime + c.duration
+            );
+            if (clip) {
+              const media = state.mediaItems.find(m => m.id === clip.mediaId);
+              if (media && media.element && media.element.seeking) {
+                await waitForVideoSeek(media.element, media.element.currentTime, 80);
+              }
+            }
+          }
+
+          renderPreviewFrame();
+
+          if (elapsed >= total) {
+            setTimeout(() => {
+              if (recorder.state !== "inactive") recorder.stop();
+            }, 180);
+            return;
+          }
+          requestAnimationFrame(exportStep);
+        }
+
+        requestAnimationFrame(exportStep);
+      }
+
+      function triggerDownload(blob, filename) {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 5000);
+      }
+
+      /* -----------------------------------------------------------------------
+         10. BRANCHEMENT DES ÉVÉNEMENTS UI & RACCOURCIS CLAVIER
+         ----------------------------------------------------------------------- */
+      function bindEvents() {
+        const fileInput = document.getElementById("fileInputMedia");
+        document.getElementById("btnImportTop").addEventListener("click", () => fileInput.click());
+        document.getElementById("btnImportLeft").addEventListener("click", () => fileInput.click());
+        document.getElementById("mediaDropzone").addEventListener("click", () => fileInput.click());
+
+        fileInput.addEventListener("change", (e) => {
+          importFiles(e.target.files);
+          fileInput.value = "";
+        });
+
+        // Thème & Langue
+        document.getElementById("themeModeSelect").addEventListener("change", (e) => {
+          state.themeMode = e.target.value;
+          applyTheme();
+        });
+
+        document.getElementById("languageSelect").addEventListener("change", (e) => {
+          applyLanguage(e.target.value);
+        });
+
+        const dropzone = document.getElementById("mediaDropzone");
+        dropzone.addEventListener("dragover", (e) => {
+          e.preventDefault();
+          dropzone.classList.add("dragover");
+        });
+        dropzone.addEventListener("dragleave", () => dropzone.classList.remove("dragover"));
+        dropzone.addEventListener("drop", (e) => {
+          e.preventDefault();
+          dropzone.classList.remove("dragover");
+          if (e.dataTransfer.files && e.dataTransfer.files.length) {
+            importFiles(e.dataTransfer.files);
+          }
+        });
+
+        document.getElementById("btnAddDemo").addEventListener("click", createDemoAssets);
+        document.getElementById("btnDemoLeft").addEventListener("click", createDemoAssets);
+
+        document.querySelectorAll(".aspect-btn").forEach(btn => {
+          btn.addEventListener("click", () => {
+            document.querySelectorAll(".aspect-btn").forEach(b => b.classList.remove("active"));
+            btn.classList.add("active");
+            setCanvasAspect(btn.dataset.aspect);
+          });
+        });
+
+        document.getElementById("btnPlayPause").addEventListener("click", togglePlayPause);
+        document.getElementById("btnStop").addEventListener("click", stopPlayback);
+        document.getElementById("btnJumpStart").addEventListener("click", () => seekTo(0));
+        document.getElementById("btnPrevFrame").addEventListener("click", () => seekTo(state.currentTime - 1 / FPS));
+        document.getElementById("btnNextFrame").addEventListener("click", () => seekTo(state.currentTime + 1 / FPS));
+
+        document.getElementById("masterVolumeSlider").addEventListener("input", (e) => {
+          state.masterVolume = parseFloat(e.target.value);
+          document.getElementById("masterVolumeVal").textContent = `${Math.round(state.masterVolume * 100)}%`;
+          audioEngine.setMasterVolume(state.masterVolume);
+        });
+
+        document.querySelectorAll(".grade-target-btn").forEach(btn => {
+          btn.addEventListener("click", () => {
+            state.gradeTargetMode = btn.dataset.mode;
+            updateInspectorUI();
+          });
+        });
+
+        document.querySelectorAll(".preset-chip").forEach(chip => {
+          chip.addEventListener("click", () => {
+            const target = getTargetGradeObject();
+            if (!target) return;
+            Object.assign(target, COLOR_PRESETS[chip.dataset.preset]);
+            updateInspectorUI();
+            renderTimeline();
+            renderPreviewFrame();
+          });
+        });
+
+        document.getElementById("btnResetGrade").addEventListener("click", () => {
+          const target = getTargetGradeObject();
+          if (!target) return;
+          Object.assign(target, defaultColorGrade());
+          updateInspectorUI();
+          renderTimeline();
+          renderPreviewFrame();
+          showToast(t("toastResetOk"));
+        });
+
+        const gradeBindings = [
+          ["ctrlBrightness", "brightness", "%"],
+          ["ctrlContrast", "contrast", "%"],
+          ["ctrlSaturation", "saturation", "%"],
+          ["ctrlTemperature", "temperature", ""],
+          ["ctrlHue", "hue", "°"],
+          ["ctrlSepia", "sepia", "%"],
+          ["ctrlBlur", "blur", " px"],
+          ["ctrlVignette", "vignette", "%"],
+          ["ctrlOpacity", "opacity", "%"],
+          ["ctrlTintAlpha", "tintAlpha", "%"]
+        ];
+
+        for (const [elId, prop, unit] of gradeBindings) {
+          document.getElementById(elId).addEventListener("input", (e) => {
+            const target = getTargetGradeObject();
+            if (!target) return;
+            target[prop] = parseFloat(e.target.value);
+            const valId = "val" + prop.charAt(0).toUpperCase() + prop.slice(1);
+            document.getElementById(valId).textContent = `${target[prop]}${unit}`;
+            updateInspectorUI();
+            renderTimeline();
+            renderPreviewFrame();
+          });
+        }
+
+        document.getElementById("ctrlTintColor").addEventListener("input", (e) => {
+          const target = getTargetGradeObject();
+          if (!target) return;
+          target.tintColor = e.target.value;
+          renderPreviewFrame();
+        });
+
+        document.getElementById("ctrlClipVolume").addEventListener("input", (e) => {
+          const clip = getSelectedClip();
+          if (!clip) return;
+          clip.volume = parseFloat(e.target.value);
+          document.getElementById("valClipVolume").textContent = `${clip.volume}%`;
+        });
+
+        document.getElementById("ctrlClipFadeIn").addEventListener("input", (e) => {
+          const clip = getSelectedClip();
+          if (!clip) return;
+          clip.fadeIn = parseFloat(e.target.value);
+          document.getElementById("valClipFadeIn").textContent = `${clip.fadeIn.toFixed(1)} s`;
+        });
+
+        document.getElementById("ctrlClipFadeOut").addEventListener("input", (e) => {
+          const clip = getSelectedClip();
+          if (!clip) return;
+          clip.fadeOut = parseFloat(e.target.value);
+          document.getElementById("valClipFadeOut").textContent = `${clip.fadeOut.toFixed(1)} s`;
+        });
+
+        document.getElementById("btnClipMute").addEventListener("click", () => {
+          const clip = getSelectedClip();
+          if (!clip) return;
+          clip.muted = !clip.muted;
+          audioEngine.stopAll();
+          updateInspectorUI();
+        });
+
+        document.getElementById("toolSelectBtn").addEventListener("click", () => setActiveTool("select"));
+        document.getElementById("toolRazorBtn").addEventListener("click", () => setActiveTool("razor"));
+        document.getElementById("btnSplitAtPlayhead").addEventListener("click", () => {
+          const clip = getSelectedClip();
+          if (!clip) return;
+          if (splitClipAtTime(clip.id, state.currentTime)) {
+            showToast(t("toastSplitOk"));
+          }
+        });
+        document.getElementById("btnDuplicateClip").addEventListener("click", duplicateSelectedClip);
+        document.getElementById("btnDeleteClip").addEventListener("click", deleteSelectedClip);
+
+        document.getElementById("btnAddVideoTrack").addEventListener("click", () => {
+          const num = state.tracks.filter(t => t.type === "video").length + 1;
+          state.tracks.unshift({ id: uid("track_v"), name: `V${num}`, type: "video", muted: false });
+          renderTimeline();
+        });
+
+        document.getElementById("btnAddAudioTrack").addEventListener("click", () => {
+          const num = state.tracks.filter(t => t.type === "audio").length + 1;
+          state.tracks.push({ id: uid("track_a"), name: `A${num}`, type: "audio", muted: false });
+          renderTimeline();
+        });
+
+        document.getElementById("timelineZoomSlider").addEventListener("input", (e) => {
+          state.pixelsPerSecond = parseInt(e.target.value, 10);
+          document.getElementById("zoomLabelVal").textContent = `${state.pixelsPerSecond} px/s`;
+          renderTimeline();
+        });
+
+        const timeRuler = document.getElementById("timeRuler");
+        let isScrubbing = false;
+
+        function scrubFromEvent(e) {
+          const rect = timeRuler.getBoundingClientRect();
+          const x = e.clientX - rect.left;
+          seekTo(x / state.pixelsPerSecond);
+        }
+
+        timeRuler.addEventListener("mousedown", (e) => {
+          isScrubbing = true;
+          scrubFromEvent(e);
+        });
+        window.addEventListener("mousemove", (e) => {
+          if (isScrubbing) scrubFromEvent(e);
+        });
+        window.addEventListener("mouseup", () => {
+          isScrubbing = false;
+        });
+
+        document.getElementById("btnExportVideo").addEventListener("click", () => openExportModal("video"));
+        document.getElementById("btnExportWav").addEventListener("click", () => openExportModal("wav"));
+        document.getElementById("btnCancelExport").addEventListener("click", () => {
+          if (state.isExporting) {
+            state.isExporting = false;
+            audioEngine.stopAll();
+            syncActiveVideosPlayback(state.currentTime, false);
+          }
+          document.getElementById("exportModal").classList.remove("open");
+        });
+        document.getElementById("btnStartExport").addEventListener("click", runExportProcess);
+
+        window.addEventListener("keydown", (e) => {
+          if (["INPUT", "SELECT", "TEXTAREA"].includes(document.activeElement.tagName)) return;
+
+          if (e.code === "Space") {
+            e.preventDefault();
+            togglePlayPause();
+          } else if (e.key === "s" || e.key === "S") {
+            const clip = getSelectedClip();
+            if (clip && splitClipAtTime(clip.id, state.currentTime)) {
+              showToast(t("toastSplitOk"));
+            }
+          } else if (e.key === "c" || e.key === "C") {
+            setActiveTool("razor");
+          } else if (e.key === "v" || e.key === "V") {
+            setActiveTool("select");
+          } else if (e.key === "Delete" || e.key === "Backspace") {
+            deleteSelectedClip();
+          } else if ((e.ctrlKey || e.metaKey) && (e.key === "d" || e.key === "D")) {
+            e.preventDefault();
+            duplicateSelectedClip();
+          } else if (e.key === "ArrowLeft") {
+            e.preventDefault();
+            seekTo(state.currentTime - 1 / FPS);
+          } else if (e.key === "ArrowRight") {
+            e.preventDefault();
+            seekTo(state.currentTime + 1 / FPS);
+          }
+        });
+      }
+
+      function setActiveTool(tool) {
+        state.activeTool = tool;
+        document.getElementById("toolSelectBtn").classList.toggle("active-tool", tool === "select");
+        document.getElementById("toolRazorBtn").classList.toggle("active-tool", tool === "razor");
+        renderTimeline();
+      }
+
+      /* -----------------------------------------------------------------------
+         11. INITIALISATION AU CHARGEMENT
+         ----------------------------------------------------------------------- */
+      bindEvents();
+      applyTheme();
+      applyLanguage(state.lang);
+      updateInspectorUI();
+      renderTimeline();
+      renderPreviewFrame();
+    })();
+  </script>
+</body>
+</html>
